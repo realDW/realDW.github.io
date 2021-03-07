@@ -1,0 +1,577 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/blogFavicon.png">
+  <link rel="icon" href="/img/blogFavicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  
+    <meta name="description" content="">
+  
+  <meta name="author" content="Daiwei">
+  <meta name="keywords" content="">
+  
+  <title>100w数据插入实现与思考 - Daiwei‘s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.4.0/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.8.8","typing":{"enable":true,"typeSpeed":100,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"onlypost":false},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Daiwei's blog</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" href="javascript:">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner" id="banner" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="100w数据插入实现与思考">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-03-07 23:12" pubdate>
+        2021年3月7日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      2.3k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      31
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">100w数据插入实现与思考</h1>
+            
+            <div class="markdown-body">
+              <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>这是学习中遇到的一个题目，往一个表中插入100w条数据，看到这个题目的时候人是懵逼的。因为目前公司线上最大的表记录不过100w出头，每次做数据清洗或者数据迁移的时候一个通宵都不一定能跑完，那么插入100w 又怎么会快的起来呢？更何况老师问是否能把性能优化到 10s 之内呢。。</p>
+<h3 id="思维爆炸"><a href="#思维爆炸" class="headerlink" title="思维爆炸"></a>思维爆炸</h3><p>只要思想不滑坡，办法总比方法多。老师既然问了那这个问题肯定是有解的，如果脑暴分析下可以得到下面的一些信息线索。</p>
+<ul>
+<li><p><strong>数据库优化主要分以下三部分</strong></p>
+<ul>
+<li><strong>数据库端参数优化</strong></li>
+<li><strong>sql 优化</strong></li>
+<li><strong>表结构优化</strong></li>
+</ul>
+</li>
+<li><p>影响数据库吞吐量的因素</p>
+<ul>
+<li>单个事务大小</li>
+<li>redolog写入情况和脏页数量</li>
+<li>数据库连接池空闲情况和一些相关的buffer</li>
+<li>索引</li>
+<li>数据库实例性能</li>
+</ul>
+</li>
+<li><p>java 代码的性能因素</p>
+<ul>
+<li>封装越小 速度越快</li>
+<li>多线程</li>
+<li>数据库连接池</li>
+</ul>
+</li>
+<li><p>运行环境因素</p>
+<ul>
+<li>cpu</li>
+<li>io</li>
+<li>system</li>
+</ul>
+</li>
+</ul>
+<p>以上这些是我能想到的一些影响的方面，和可以针对优化的点。本次测试基本上都在我自己的 mbp 上跑，所以<strong>运行环境这个条件变量基本是控制不变</strong>的。</p>
+<p>根据上面的一些因素可以得到一些可行的操作方案</p>
+<ol>
+<li>数据库连接工具执行批量sql</li>
+<li>基本的循环插入</li>
+<li>拼接批量 sql</li>
+<li>使用preparedStatement + queryBatch</li>
+<li>多线程提升性能</li>
+</ol>
+<h3 id="走两步试试"><a href="#走两步试试" class="headerlink" title="走两步试试"></a>走两步试试</h3><h4 id="数据库环境"><a href="#数据库环境" class="headerlink" title="数据库环境"></a>数据库环境</h4><blockquote>
+<p>docker 默认配置 + mysql5.7</p>
+</blockquote>
+<figure class="highlight zsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs zsh">docker pull mysql:5.7<br>docker run --name mysql-test -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql:5.7<br></code></pre></td></tr></table></figure>
+
+<h4 id="表结构"><a href="#表结构" class="headerlink" title="表结构"></a>表结构</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> tb_order_test_1(<br>	`id` <span class="hljs-type">int</span> auto_increment,<br>	`good_id` <span class="hljs-type">int</span> <span class="hljs-keyword">not</span> <span class="hljs-keyword">null</span> <span class="hljs-keyword">default</span> <span class="hljs-string">&#x27;0&#x27;</span>,<br>	`user_id` <span class="hljs-type">int</span> <span class="hljs-keyword">not</span> <span class="hljs-keyword">null</span> <span class="hljs-keyword">default</span> <span class="hljs-string">&#x27;0&#x27;</span>, <br>	`good_status` tinyint <span class="hljs-keyword">not</span> <span class="hljs-keyword">null</span> <span class="hljs-keyword">default</span> <span class="hljs-string">&#x27;1&#x27;</span>,<br>	`username` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">not</span> <span class="hljs-keyword">null</span> <span class="hljs-keyword">default</span> <span class="hljs-string">&#x27;&#x27;</span>,<br>	<span class="hljs-keyword">primary</span> key(id)<br>) engine<span class="hljs-operator">=</span>innodb<br></code></pre></td></tr></table></figure>
+
+<h4 id="数据库连接工具执行批量sql"><a href="#数据库连接工具执行批量sql" class="headerlink" title="数据库连接工具执行批量sql"></a>数据库连接工具执行批量sql</h4><p>从数据库中反向导出数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs sql">LOCK TABLES `tb_order_test_1` WRITE;<br><span class="hljs-comment">/*!40000 ALTER TABLE `tb_order_test_1` DISABLE KEYS */</span>;<br><br><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> `tb_order_test_1` (`id`, `good_id`, `user_id`, `good_status`, `username`)<br><span class="hljs-keyword">VALUES</span><br>	(<span class="hljs-number">1</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;daiwei&#x27;</span>),<br>	(<span class="hljs-number">2</span>,<span class="hljs-number">1</span>,<span class="hljs-number">1</span>,<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;daiwei&#x27;</span>),<br>	(<span class="hljs-number">3</span>,<span class="hljs-number">2</span>,<span class="hljs-number">2</span>,<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;daiwei&#x27;</span>),<br>	(<span class="hljs-number">4</span>,<span class="hljs-number">3</span>,<span class="hljs-number">3</span>,<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;daiwei&#x27;</span>),<br>	(<span class="hljs-number">5</span>,<span class="hljs-number">4</span>,<span class="hljs-number">4</span>,<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;daiwei&#x27;</span>),<br>	..... <span class="hljs-number">100</span>w .....<br>	(<span class="hljs-number">999997</span>,<span class="hljs-number">999996</span>,<span class="hljs-number">999996</span>,<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;daiwei&#x27;</span>),<br>	(<span class="hljs-number">999998</span>,<span class="hljs-number">999997</span>,<span class="hljs-number">999997</span>,<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;daiwei&#x27;</span>),<br>	(<span class="hljs-number">999999</span>,<span class="hljs-number">999998</span>,<span class="hljs-number">999998</span>,<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;daiwei&#x27;</span>),<br>	(<span class="hljs-number">1000000</span>,<span class="hljs-number">999999</span>,<span class="hljs-number">999999</span>,<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;daiwei&#x27;</span>);<br><br><span class="hljs-comment">/*!40000 ALTER TABLE `tb_order_test_1` ENABLE KEYS */</span>;<br>UNLOCK TABLES;<br></code></pre></td></tr></table></figure>
+
+<p>这里导出数据可以发现两个问题，首先sql 的存储的文件是批量插入的，其次在操作的过程中，表是锁定状态的。</p>
+<p>最终手动🙈掐表测100w 的数据导入大概需要 7.5 秒。</p>
+<h4 id="基础的循环操作插入操作"><a href="#基础的循环操作插入操作" class="headerlink" title="基础的循环操作插入操作"></a>基础的循环操作插入操作</h4><p>这个最基本最简单的循环插入，明显是不可能会有较高的插入性能的，但是我就是想知道最慢着要多久🤤。这最基本的就不用那些ORM 框架了就直接使用 jdbc 操作了，封装越高速度也就越慢。同时稍微控制下事务，这种不考虑大事务的前提下，减少事务提交，一次提交。大量数据的插入会影响到数据页导致页分裂，也会拖慢整体的时间，所以整个测试过程中，不额外创建索引。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">insertByLoop</span><span class="hljs-params">()</span> </span>&#123;<br>  	<span class="hljs-keyword">long</span> start = System.currentTimeMillis();<br>  	Connection conn = JdbcUtil.getConnFromHikari();<br>  	PreparedStatement stat = <span class="hljs-keyword">null</span>;<br>  	<span class="hljs-keyword">try</span> &#123;<br>      	String sql = <span class="hljs-string">&quot;insert into tb_order_test_1(good_id, user_id, good_status, username) values (?, ?, ?, ?)&quot;</span>;<br>      	conn.setAutoCommit(<span class="hljs-keyword">false</span>);<br>      	stat = conn.prepareStatement(sql);<br>      	<span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">3000</span>; i++) &#123;<br>          	stat.setLong(<span class="hljs-number">1</span>, i);<br>          	stat.setLong(<span class="hljs-number">2</span>, i);<br>          	stat.setInt(<span class="hljs-number">3</span>, <span class="hljs-number">1</span>);<br>          	stat.setString(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;daiwei&quot;</span>);<br>          	stat.execute();<br>        &#125;<br>      	conn.commit();<br>    &#125; <span class="hljs-keyword">catch</span> (SQLException throwables) &#123;<br>      	throwables.printStackTrace();<br>    &#125;<span class="hljs-keyword">finally</span> &#123;<br>      	JdbcUtil.release(conn, stat, <span class="hljs-keyword">null</span>);<br>    &#125;<br>  	System.out.println(System.currentTimeMillis() - start);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>1w条数据插入耗时 24015 ms，插入的数据量和插入时间是线性相关的，所以就不过多的浪费时间了。。。🤨</p>
+<h4 id="jdbc-batch-批处理"><a href="#jdbc-batch-批处理" class="headerlink" title="jdbc batch 批处理"></a>jdbc batch 批处理</h4><p>这个版本的操作相较于上面的一种，最大的提升就是用了批处理操作。在批量插入上性能能有一定的提升，但是提升效果不是很大。1w 数据量 11358ms。<strong>但是这里有一个参数rewriteBatchedStatements=true</strong>，加上这个参数允许将批量处理的 sql 进行重写，来提高批处理性能，相当于魔改了。。。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">insertSqlBatch</span><span class="hljs-params">()</span> </span>&#123;<br>  	<span class="hljs-keyword">long</span> start = System.currentTimeMillis();<br>  	Connection conn = JdbcUtil.getConnFromHikari();<br>  	PreparedStatement stat = <span class="hljs-keyword">null</span>;<br>  	<span class="hljs-keyword">try</span> &#123;<br>      	String sql = <span class="hljs-string">&quot;insert into tb_order_test_1(good_id, user_id, good_status, username) values (?, ?, ?, ?)&quot;</span>;<br>      	conn.setAutoCommit(<span class="hljs-keyword">false</span>);<br>      	stat = conn.prepareStatement(sql);<br>      	<span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">50000</span>; i++) &#123;<br>          	stat.setLong(<span class="hljs-number">1</span>, i);<br>          	stat.setLong(<span class="hljs-number">2</span>, i);<br>          	stat.setInt(<span class="hljs-number">3</span>, <span class="hljs-number">1</span>);<br>          	stat.setString(<span class="hljs-number">4</span>, <span class="hljs-string">&quot;daiwei&quot;</span>);<br>          	stat.addBatch();<br>        &#125;<br>      	stat.executeBatch();<br>      	conn.commit();<br>    	&#125; <span class="hljs-keyword">catch</span> (SQLException throwables) &#123;<br>      	throwables.printStackTrace();<br>    	&#125; <span class="hljs-keyword">finally</span> &#123;<br>      	JdbcUtil.release(conn, stat, <span class="hljs-keyword">null</span>);<br>    	&#125;<br>  	System.out.println(System.currentTimeMillis() - start);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs properties"><span class="hljs-meta">jdbc.url</span>=<span class="hljs-string">jdbc:mysql://127.0.0.1:3306/test?rewriteBatchedStatements=true</span><br></code></pre></td></tr></table></figure>
+
+<p>添加参数之后，batch insert 的性能有极大的提高。100w 的数据量 8775ms 就操作完成。</p>
+<h4 id="拼接sql-批处理"><a href="#拼接sql-批处理" class="headerlink" title="拼接sql + 批处理"></a>拼接sql + 批处理</h4><p>在不开启rewriteBatchedStatements = true 的情况下，如果我自己手动拼接sql 减少 jdbc 的封装，速度是否能在往上提升呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">insertByBatch</span><span class="hljs-params">()</span> </span>&#123;<br>  	Connection conn = JdbcUtil.getConnFromHikari();<br>    Statement stat = <span class="hljs-keyword">null</span>;<br>    <span class="hljs-keyword">long</span> start = System.currentTimeMillis();<br>    <span class="hljs-keyword">try</span> &#123;<br>      	stat = conn.createStatement();<br>      	String sql;<br>      	StringBuilder sb = <span class="hljs-keyword">new</span> StringBuilder(<span class="hljs-string">&quot;insert into tb_order_test_1(good_id, user_id, good_status, username) values&quot;</span>);<br>      	conn.setAutoCommit(<span class="hljs-keyword">false</span>);<br>      	<span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">1000</span>; i++) &#123;<br>          	<span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> j = <span class="hljs-number">0</span>; j &lt; <span class="hljs-number">1000</span>; j++) &#123;<br>              	sb.append(<span class="hljs-string">&quot;(&quot;</span> + i +<span class="hljs-string">&quot; , &quot;</span> + j +<span class="hljs-string">&quot;, 1 , &#x27;daiwei&#x27;),&quot;</span>);<br>            &#125;<br>          	sql = sb.deleteCharAt(sb.length() - <span class="hljs-number">1</span>).toString();<br>          	stat.addBatch(sql);<br>          	sb.delete(<span class="hljs-number">75</span>, sb.length());<br>        &#125;<br>      	stat.executeBatch();<br>      	conn.commit();<br>      	System.out.println(System.currentTimeMillis() - start);<br>    &#125; <span class="hljs-keyword">catch</span> (SQLException throwables) &#123;<br>      	throwables.printStackTrace();<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>      	JdbcUtil.release(conn, stat, <span class="hljs-keyword">null</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个方案跑下来，优化效果还是比较明显的，100w的数据插入的时间大概在 5s ～6s 这个区间。</p>
+<p>这个方案的小缺点是事务分开的整体的数据插入不是原子性的。</p>
+<h4 id="多线程-拼接sql-批处理"><a href="#多线程-拼接sql-批处理" class="headerlink" title="多线程 + 拼接sql + 批处理"></a>多线程 + 拼接sql + 批处理</h4><p>单线程跑下来性能都已经提升这么明显了，那多线程。。。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">insertConcurBatch</span><span class="hljs-params">()</span> </span>&#123;<br>  	ExecutorService executor = Executors.newFixedThreadPool(<span class="hljs-number">4</span>);<br>  	<span class="hljs-keyword">long</span> start = System.currentTimeMillis();<br>  	CyclicBarrier cyclicBarrier = <span class="hljs-keyword">new</span> CyclicBarrier(<span class="hljs-number">4</span>, () -&gt; &#123;<br>      	System.out.println(System.currentTimeMillis() - start);<br>      	executor.shutdown();<br>    &#125;);<br>  	<span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">4</span>; i++) &#123;<br>      	executor.execute(() -&gt; &#123;<br>          	insertByBatch(<span class="hljs-number">250</span>);<br>          	<span class="hljs-keyword">try</span> &#123;<br>              	cyclicBarrier.await();<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>              	e.printStackTrace();<br>            &#125; <span class="hljs-keyword">catch</span> (BrokenBarrierException e) &#123;<br>              	e.printStackTrace();<br>            &#125;<br>        &#125;);<br>    &#125;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">insertByBatch</span><span class="hljs-params">(<span class="hljs-keyword">int</span> n)</span> </span>&#123;<br>  	Connection conn = JdbcUtil.getConnFromHikari();<br>    Statement stat = <span class="hljs-keyword">null</span>;<br>    <span class="hljs-keyword">long</span> start = System.currentTimeMillis();<br>    <span class="hljs-keyword">try</span> &#123;<br>      	stat = conn.createStatement();<br>      	String sql;<br>      	StringBuilder sb = <span class="hljs-keyword">new</span> StringBuilder(<span class="hljs-string">&quot;insert into tb_order_test_1(good_id, user_id, good_status, username) values&quot;</span>);<br>      	conn.setAutoCommit(<span class="hljs-keyword">false</span>);<br>      	<span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; n; i++) &#123;<br>          	<span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> j = <span class="hljs-number">0</span>; j &lt; <span class="hljs-number">1000</span>; j++) &#123;<br>              	sb.append(<span class="hljs-string">&quot;(&quot;</span> + i +<span class="hljs-string">&quot; , &quot;</span> + j +<span class="hljs-string">&quot;, 1 , &#x27;daiwei&#x27;),&quot;</span>);<br>            &#125;<br>          	sql = sb.deleteCharAt(sb.length() - <span class="hljs-number">1</span>).toString();<br>          	stat.addBatch(sql);<br>          	sb.delete(<span class="hljs-number">75</span>, sb.length());<br>        &#125;<br>      	stat.executeBatch();<br>      	conn.commit();<br>      	System.out.println(System.currentTimeMillis() - start);<br>    &#125; <span class="hljs-keyword">catch</span> (SQLException throwables) &#123;<br>      	throwables.printStackTrace();<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>      	JdbcUtil.release(conn, stat, <span class="hljs-keyword">null</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>果然发挥多线程的性能优势，整体性能优能往上提升一点点。</p>
+<h3 id="泥巴路上走一走"><a href="#泥巴路上走一走" class="headerlink" title="泥巴路上走一走"></a>泥巴路上走一走</h3><p>实际生产环境的话，并不会有几个表只有 几个字段，多是字段20+ ，所以如果字段多上去，插入性能是否会受到影响？如此便有了下面的测试</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> `tb_order_test` (<br>  `id` <span class="hljs-type">int</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span> AUTO_INCREMENT,<br>  `good_id` <span class="hljs-type">int</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `user_id` <span class="hljs-type">int</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `good_status` tinyint(<span class="hljs-number">4</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;1&#x27;</span>,<br>  `field_4` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_5` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_6` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_7` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_8` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_9` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_10` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_11` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_12` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_13` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_14` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_15` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_16` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_17` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_18` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_19` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_20` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_21` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_22` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_23` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_24` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_25` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_26` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_27` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_28` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_29` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `field_30` <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  <span class="hljs-keyword">PRIMARY</span> KEY (`id`)<br>) ENGINE<span class="hljs-operator">=</span>InnoDB AUTO_INCREMENT<span class="hljs-operator">=</span><span class="hljs-number">5214001</span> <span class="hljs-keyword">DEFAULT</span> CHARSET<span class="hljs-operator">=</span>latin1;<br></code></pre></td></tr></table></figure>
+
+<p>测试代码的话这里用的还是 多线程 + 拼接sql + 批处理 的 pro 版本，果然这次的测试的速度有很明显的下降 100w 的插入时间 到了 19866ms，我的电脑是 8 核的，本着充分利用系统资源和数据库并发资源的原则。最终的 100w 时间到了 18080ms。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>在这个场景中有很多的环境因素：mysql数据库、sql语句和 java代码等多个方面，其中的任何一个部分出现瓶颈，都会拖累整体的性能，但是如果换个角度去看这个问题。如果我们每个部分的性能都能充分发挥整体的性能也相应提高。本次的优化过程从 sql部分，编码技巧到表结构优化去尽可能提升100w数据的插入速度。这里漏了一个角度，就是调整mysql 的参数去优化，在mysql 写入过程中有 WAL 机制，如果这里调大 redolog buf 尽可能少的减少 redolog 的 刷脏页操作，是否也能提升写入的性能呢？🤔，最后下面是本次测试结果表格</p>
+<table>
+<thead>
+<tr>
+<th>插入方式</th>
+<th>1w</th>
+<th>10w</th>
+<th>100W</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据库工具导入</td>
+<td>-</td>
+<td>-</td>
+<td>7500ms</td>
+</tr>
+<tr>
+<td>单个事务循环插入</td>
+<td>24015ms</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>单个事务batch批处理</td>
+<td>11358ms</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>魔改 batch <br />（rewriteBatchedStatements）</td>
+<td>689ms</td>
+<td>1562ms</td>
+<td>8775ms</td>
+</tr>
+<tr>
+<td>拼接sql + 批处理</td>
+<td>105ms</td>
+<td>992ms</td>
+<td>5302ms</td>
+</tr>
+<tr>
+<td>多线程 + 拼接sql + 批处理</td>
+<td>-</td>
+<td>-</td>
+<td>4314ms</td>
+</tr>
+</tbody></table>
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/%E9%9A%8F%E7%AC%94%E8%AE%B0/">随笔记</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/mysql/">mysql</a>
+                    
+                      <a class="hover-with-bg" href="/tags/jdbc/">jdbc</a>
+                    
+                      <a class="hover-with-bg" href="/tags/%E5%AE%9E%E6%93%8D/">实操</a>
+                    
+                      <a class="hover-with-bg" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/03/07/100w%E6%95%B0%E6%8D%AE%E6%8F%92%E5%85%A5%E5%AE%9E%E7%8E%B0%E4%B8%8E%E6%80%9D%E8%80%83/">
+                        <span class="hidden-mobile">100w数据插入实现与思考</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+  </div>
+  
+
+  
+
+  
+</footer>
+
+<!-- SCRIPTS -->
+
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.0/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      $('#local-search-input').on('click', function() {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      });
+      $('#modalSearch').on('shown.bs.modal', function() {
+        $('#local-search-input').focus();
+      });
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+
+</body>
+</html>
