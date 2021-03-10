@@ -4,17 +4,23 @@
   
   
   <entry>
-    <title>daily-tips</title>
+    <title>每天一个开发小技巧</title>
     <link href="/2021/03/11/daily-tips/"/>
     <url>/2021/03/11/daily-tips/</url>
     
-    <content type="html"><![CDATA[]]></content>
+    <content type="html"><![CDATA[<h2 id="尬聊"><a href="#尬聊" class="headerlink" title="尬聊"></a>尬聊</h2><p>在日常开发中，不免会遇到自己不熟悉的地方，但是很多时候我们查完用完然后就是技能归还。如果能在这里记录整理收集，那也是一笔宝贵的知识力量。可能有的小技巧并没有太多的实用价值，也有可能有一些奇奇怪怪的奇技淫巧，但这些代码里的精彩的碎片。日拱一卒，积少成多，相信时间的力量。</p><h2 id="小技巧"><a href="#小技巧" class="headerlink" title="小技巧"></a>小技巧</h2><ul><li>Mac校验文件SHA</li></ul><figure class="highlight zsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs zsh">shasum -a 256 <span class="hljs-variable">$&#123;file&#125;</span><br></code></pre></td></tr></table></figure><ul><li><a href="https://jaywcjlove.gitee.io/linux-command/c/tcpdump.html">Linux 命令行抓包</a></li></ul><figure class="highlight zsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs zsh">tcpdump -D <span class="hljs-comment"># 当前可以监听的网卡</span><br></code></pre></td></tr></table></figure>]]></content>
     
+    
+    <categories>
+      
+      <category>随笔记</category>
+      
+    </categories>
     
     
     <tags>
       
-      <tag>小技巧</tag>
+      <tag>开发小技巧</tag>
       
     </tags>
     
