@@ -187,7 +187,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      455 字
+      524 字
     </span>
   
 
@@ -197,7 +197,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      5
+      6
        分钟
     </span>
   
@@ -244,10 +244,10 @@
 <ul>
 <li>git tag 重命名</li>
 </ul>
-<div class="code-wrapper"><pre><code class="hljs zsh">git tag [new_name] [old_name]  <span class="hljs-comment"># 复制原有的tag</span>
-git tag -d [old_name] <span class="hljs-comment"># 删除原有tag</span>
-git push origin :refs/tag/v1.0 <span class="hljs-comment"># 删除远程 tag</span>
-git push --tag <span class="hljs-comment">#推送本地新的tag</span></code></pre></div>
+<div class="code-wrapper"><pre><code class="hljs zsh">daiwei@daiweideMacBook-Pro ~ % git tag [new_name] [old_name]  <span class="hljs-comment"># 复制原有的tag</span>
+daiwei@daiweideMacBook-Pro ~ % git tag -d [old_name] <span class="hljs-comment"># 删除原有tag</span>
+daiwei@daiweideMacBook-Pro ~ % git push origin :refs/tag/v1.0 <span class="hljs-comment"># 删除远程 tag</span>
+daiwei@daiweideMacBook-Pro ~ % git push --tag <span class="hljs-comment">#推送本地新的tag</span></code></pre></div>
 
 <ul>
 <li>reflections 反射工具包，内置反射相关操作，简化开发</li>
@@ -277,7 +277,14 @@ git push --tag <span class="hljs-comment">#推送本地新的tag</span></code></
 </li>
 </ul>
 </li>
+<li><p>.gitignore 文件不生效的问题，清理 git 的本地的缓存，然后重新 add commit 就可以了</p>
+</li>
 </ul>
+<div class="code-wrapper"><pre><code class="hljs zsh">daiwei@daiweideMacBook-Pro ~ % git rm -r --cached .
+daiwei@daiweideMacBook-Pro ~ % git add .
+daiwei@daiweideMacBook-Pro ~ % git commit -m<span class="hljs-string">&#x27;update msg&#x27;</span>
+daiwei@daiweideMacBook-Pro ~ % git push origin main</code></pre></div>
+
 
             </div>
             <hr>
