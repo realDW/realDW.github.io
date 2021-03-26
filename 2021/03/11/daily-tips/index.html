@@ -187,7 +187,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      524 字
+      644 字
     </span>
   
 
@@ -197,7 +197,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      6
+      8
        分钟
     </span>
   
@@ -285,6 +285,21 @@ daiwei@daiweideMacBook-Pro ~ % git add .
 daiwei@daiweideMacBook-Pro ~ % git commit -m<span class="hljs-string">&#x27;update msg&#x27;</span>
 daiwei@daiweideMacBook-Pro ~ % git push origin main</code></pre></div>
 
+<ul>
+<li><p>linux 查看端口，每次都要查，每次都记不住😫</p>
+<p>netstat 命令 用于查看 tcp 和 udp 的端口占用情况</p>
+<ul>
+<li>-t (tcp) 仅仅显示 tcp 相关</li>
+<li>-u(udp) 仅仅显示 udp 相关</li>
+<li>-n 拒绝显示别名，能显示数字的全部转化为数字</li>
+<li>-l 仅列出在Listen(监听)的服务状态</li>
+<li>-p 显示建立相关链接的程序名</li>
+</ul>
+<p>所以我全都要 所以命令就是 -nptul (牛批吐了)😏</p>
+<div class="code-wrapper"><pre><code class="hljs zsh">netstat -nptul | grep &lt;port&gt;</code></pre></div>
+
+</li>
+</ul>
 
             </div>
             <hr>
