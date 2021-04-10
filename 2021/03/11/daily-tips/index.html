@@ -187,7 +187,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      670 字
+      1.1k 字
     </span>
   
 
@@ -197,7 +197,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      8
+      15
        分钟
     </span>
   
@@ -236,10 +236,14 @@
 </ul>
 <div class="code-wrapper"><pre><code class="hljs zsh">shasum -a 256 <span class="hljs-variable">$&#123;file&#125;</span></code></pre></div>
 
+
+
 <ul>
 <li><a target="_blank" rel="noopener" href="https://jaywcjlove.gitee.io/linux-command/c/tcpdump.html">Linux 命令行抓包</a></li>
 </ul>
 <div class="code-wrapper"><pre><code class="hljs zsh">tcpdump -D <span class="hljs-comment"># 当前可以监听的网卡</span></code></pre></div>
+
+
 
 <ul>
 <li>git tag 重命名</li>
@@ -249,6 +253,8 @@ daiwei@daiweideMacBook-Pro ~ % git tag -d [old_name] <span class="hljs-comment">
 daiwei@daiweideMacBook-Pro ~ % git push origin :refs/tag/v1.0 <span class="hljs-comment"># 删除远程 tag</span>
 daiwei@daiweideMacBook-Pro ~ % git push --tag <span class="hljs-comment">#推送本地新的tag</span></code></pre></div>
 
+
+
 <ul>
 <li>reflections 反射工具包，内置反射相关操作，简化开发</li>
 </ul>
@@ -256,6 +262,8 @@ daiwei@daiweideMacBook-Pro ~ % git push --tag <span class="hljs-comment">#推送
   <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.reflections<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
   <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>reflections<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
 <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span></code></pre></div>
+
+
 
 <ul>
 <li>不使用 springboot-parent 创建 springboot 项目，方便清晰系统整体继承结构。只需要在依赖的父pom 的 dependencyManagement 中添加 spring-boot-dependencies 依赖即可。</li>
@@ -265,6 +273,8 @@ daiwei@daiweideMacBook-Pro ~ % git push --tag <span class="hljs-comment">#推送
   <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
   <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>$&#123;springboot.version&#125;<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
 <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span></code></pre></div>
+
+
 
 <ul>
 <li><p>三个有意思的在线的 playgroud </p>
@@ -285,6 +295,8 @@ daiwei@daiweideMacBook-Pro ~ % git add .
 daiwei@daiweideMacBook-Pro ~ % git commit -m<span class="hljs-string">&#x27;update msg&#x27;</span>
 daiwei@daiweideMacBook-Pro ~ % git push origin main</code></pre></div>
 
+
+
 <ul>
 <li><p>linux 查看端口，每次都要查，每次都记不住😫</p>
 <p>netstat 命令 用于查看 tcp 和 udp 的端口占用情况</p>
@@ -299,6 +311,71 @@ daiwei@daiweideMacBook-Pro ~ % git push origin main</code></pre></div>
 <div class="code-wrapper"><pre><code class="hljs zsh">netstat -nptul | grep &lt;port&gt;</code></pre></div>
 
 <p> <strong>注意这个命令 mac 上就是另外一套参数了，mac 上可以使用 lsof - i:port</strong></p>
+</li>
+<li><p>redis 中 lua 脚本的编写的基本方法</p>
+<p>从 redis 2.6.0 开始内置支持 lua 脚本，可以通过 lua 脚本实现执行多条命令的原子性，典型的使用场景有 分布式锁 和 分布式扣减等。基本的操作命令如下</p>
+<div class="code-wrapper"><pre><code class="hljs zsh">127.0.0.1:6379&gt; EVAL script numkeys key [key...] arg [arg...]</code></pre></div>
+
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>script</td>
+<td>脚本内容</td>
+</tr>
+<tr>
+<td>numkeys</td>
+<td>key 的个数（只是 key 的个数和 argv 没有关系）</td>
+</tr>
+<tr>
+<td>key [key…]</td>
+<td>key列表，键名通过全局变量 KEYS 数组，用 1 为基址的形式访问( KEYS[1] ， KEYS[2] ，以此类推)</td>
+</tr>
+<tr>
+<td>arg [arg…]</td>
+<td>参数列表，参数通过全局变量 ARGV 数组，用 1 为基址的形式访问( ARGV[1] ， ARGV[2] ，以此类推)</td>
+</tr>
+</tbody></table>
+<div class="code-wrapper"><pre><code class="hljs zsh">127.0.0.1:6379&gt; <span class="hljs-built_in">eval</span> <span class="hljs-string">&quot;return &#123;KEYS[1], KEYS[2], ARGV[1], ARGV[2], ARGV[3]&#125;&quot;</span> 2 key1 key2 avg1 avg2 avg3
+<span class="hljs-comment">## 输出</span>
+1) <span class="hljs-string">&quot;key1&quot;</span>
+2) <span class="hljs-string">&quot;key2&quot;</span>
+3) <span class="hljs-string">&quot;avg1&quot;</span>
+4) <span class="hljs-string">&quot;avg2&quot;</span>
+5) <span class="hljs-string">&quot;avg3&quot;</span></code></pre></div>
+
+<p>还可以通过 <strong>script load</strong> 命令缓存命令，并通过 <strong>evalsha</strong> 命令执行</p>
+<div class="code-wrapper"><pre><code class="hljs zsh">SCRIPT LOAD script <span class="hljs-comment"># 缓存 lua 脚本</span>
+EVALSHA sha1 numkeys key [key ...] arg [arg ...]  <span class="hljs-comment"># 执行 lua 脚本</span></code></pre></div>
+
+<div class="code-wrapper"><pre><code class="hljs zsh">script load <span class="hljs-string">&quot;return &#123;KEYS[1], KEYS[2], ARGV[1], ARGV[2], ARGV[3]&#125;&quot;</span>
+<span class="hljs-string">&quot;0e8e5b92bfe818cf5eb29a03465e71bd8ef3e95a&quot;</span></code></pre></div>
+
+<div class="code-wrapper"><pre><code class="hljs zsh">127.0.0.1:6379&gt; evalsha 0e8e5b92bfe818cf5eb29a03465e71bd8ef3e95a 2 hello word arg1 arg2 arg3
+1) <span class="hljs-string">&quot;hello&quot;</span>
+2) <span class="hljs-string">&quot;word&quot;</span>
+3) <span class="hljs-string">&quot;arg1&quot;</span>
+4) <span class="hljs-string">&quot;arg2&quot;</span>
+5) <span class="hljs-string">&quot;arg3&quot;</span></code></pre></div>
+
+<p>几个常用的 redis lua 脚本</p>
+<p>​    分布式锁</p>
+<div class="code-wrapper"><pre><code class="hljs lua"><span class="hljs-comment">--lock</span>
+<span class="hljs-keyword">if</span> redis.call(<span class="hljs-string">&#x27;setnx&#x27;</span>, KEYS[<span class="hljs-number">1</span>], ARGV[<span class="hljs-number">1</span>]) == <span class="hljs-number">1</span> <span class="hljs-keyword">then</span> redis.call(<span class="hljs-string">&#x27;expire&#x27;</span>, KEYS[<span class="hljs-number">1</span>], ARGV[<span class="hljs-number">2</span>]) <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;true&#x27;</span> <span class="hljs-keyword">else</span> <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;false&#x27;</span> <span class="hljs-keyword">end</span>
+<span class="hljs-comment">-- unlock</span>
+<span class="hljs-keyword">if</span> redis.call(<span class="hljs-string">&#x27;get&#x27;</span>, KEYS[<span class="hljs-number">1</span>]) == ARGV[<span class="hljs-number">1</span>] <span class="hljs-keyword">then</span> redis.call(<span class="hljs-string">&#x27;del&#x27;</span>, KEYS[<span class="hljs-number">1</span>]) <span class="hljs-keyword">end</span> <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;true&#x27;</span></code></pre></div>
+
+<p>​    分布式计数器</p>
+<div class="code-wrapper"><pre><code class="hljs lua"><span class="hljs-keyword">if</span> redis.call(<span class="hljs-string">&#x27;EXISTS&#x27;</span>, KEYS[<span class="hljs-number">1</span>]) == <span class="hljs-number">1</span> <span class="hljs-keyword">and</span> redis.call(<span class="hljs-string">&#x27;GET&#x27;</span>, KEYS[<span class="hljs-number">1</span>]) &gt; ARGV[<span class="hljs-number">1</span>] <span class="hljs-keyword">then</span> redis.call(<span class="hljs-string">&#x27;decr&#x27;</span>, KEYS[<span class="hljs-number">1</span>])  <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;true&#x27;</span> <span class="hljs-keyword">else</span>  <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;false&#x27;</span> <span class="hljs-keyword">end</span></code></pre></div>
+
+
+
+
+
 </li>
 </ul>
 
