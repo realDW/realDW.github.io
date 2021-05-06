@@ -1,0 +1,594 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/blogFavicon.png">
+  <link rel="icon" href="/img/blogFavicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  
+    <meta name="description" content="">
+  
+  <meta name="author" content="Daiwei">
+  <meta name="keywords" content="">
+  
+  <title>JVM 基础—Java 字节码 - Daiwei‘s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.4.0/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.8.8","typing":{"enable":true,"typeSpeed":100,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"onlypost":false},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Daiwei's blog</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" href="javascript:">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner" id="banner" parallax=true
+         style="background: url('https://gitee.com/realDaiwei/img/raw/master/CpHNKNRwXps.jpg') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="JVM 基础—Java 字节码">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-05-07 00:43" pubdate>
+        2021年5月7日 凌晨
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      3.4k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      41
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">JVM 基础—Java 字节码</h1>
+            
+            <div class="markdown-body">
+              <h1 id="JVM-基础—Java-字节码"><a href="#JVM-基础—Java-字节码" class="headerlink" title="JVM 基础—Java 字节码"></a>JVM 基础—Java 字节码</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>我们通常表述的 JVM 通常有三种意思，JVM 是 Java virtual machine 即 java 虚拟机的缩写，也就是我们通常所指的 JVM。JVM还是一种用于计算设备的规范，它是一个虚构出来的计算机，是通过在实际的计算机上仿真模拟各种计算机功能来实现的。因此 JVM 也是图灵完备的。当然 JVM 还可以表示一个虚拟机的实例。Java 一个非常重要的特性就是和平台无关，而 JVM 是实现这一点的关键。JVM 底层使用 C 进行编写，只要平台能执行 C 语言，这也就能启动 JVM 运行 Java 程序。JVM 通过编译 Java 语言生成字节码文件，字节码文件在通过 JVM 进行解释执行。因此只要运行在不同的平台上的JVM 能拿到字节码文件，就能解释执行出相同的结果。这就是 Java 可以 “一次编译，到处执行” 的原因。 </p>
+<p>当然并不是Java 语言是跨平台的语言，拿 C++ 举个例子，C++ 也是一门跨平台的语言，但是和 Java 语言不同的是，C++ 需要到不同的平台生成不同的文件，然后进行执行，也就是源码跨平台，而 Java 是二进制跨平台。</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003029.png" srcset="/img/loading.gif"></p>
+<h2 id="Java-字节码技术"><a href="#Java-字节码技术" class="headerlink" title="Java 字节码技术"></a>Java 字节码技术</h2><h3 id="概述-1"><a href="#概述-1" class="headerlink" title="概述"></a>概述</h3><p>Java 代码通过编译生成 Java 字节码即 .class 文件，不同的 JVM 通过执行 .class 文件实现跨平台。Java bytecode 由但字节 （byte）的指令组成，理论上最多支持 256 个操作码（opencode）。实际上 Java 只用了 200 左右的操作码，还有一些操作码则保留给调试操作。操作码， 下面称为 指令 , 主要由 类型前缀 和 操作名称 两部分组成。 </p>
+<blockquote>
+<p>例如，’ i ‘ 前缀代表 ‘ integer ’，所以，’ iadd ‘ 很容易理解, 表示对整数执行加法运算。</p>
+</blockquote>
+<p>根据指令性质，主要分为 4 个大类：</p>
+<ol>
+<li>栈操作指令， 包括与局部变量交互的指令。</li>
+<li>程序流程控制指令。</li>
+<li>对象操作指令，包括方法调用指令。</li>
+<li>算术运算以及类型转换指令。</li>
+</ol>
+<h3 id="获取字节码"><a href="#获取字节码" class="headerlink" title="获取字节码"></a>获取字节码</h3><p>可以使用 javap 命令来获取 class 文件中的字节码， javap 是 jdk 中内置的用于反编译字节码的工具</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloByteCode</span> </span>&#123;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;<br>        HelloByteCode obj = <span class="hljs-keyword">new</span> HelloByteCode();<br>        System.out.println(<span class="hljs-string">&quot;hello&quot;</span>);<br>    &#125; <br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>现使用 javac 命令编译出 .class，在使用 <code>javap -c</code> 命令编译得到字节码文件</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs bash">daiwei@daiweideMacBook-Pro <span class="hljs-built_in">test</span> % javap -c HelloByteCode.class<br>Compiled from <span class="hljs-string">&quot;HelloByteCode.java&quot;</span><br>public class HelloByteCode &#123;<br>  public HelloByteCode();<br>    Code:<br>       0: aload_0<br>       1: invokespecial <span class="hljs-comment">#1                  // Method java/lang/Object.&quot;&lt;init&gt;&quot;:()V</span><br>       4: <span class="hljs-built_in">return</span><br><br>  public static void main(java.lang.String[]);<br>    Code:<br>       0: new           <span class="hljs-comment">#2                  // class HelloByteCode</span><br>       3: dup<br>       4: invokespecial <span class="hljs-comment">#3                  // Method &quot;&lt;init&gt;&quot;:()V</span><br>       7: astore_1<br>       8: getstatic     <span class="hljs-comment">#4                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br>      11: ldc           <span class="hljs-comment">#5                  // String hello</span><br>      13: invokevirtual <span class="hljs-comment">#6                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V</span><br>      16: <span class="hljs-built_in">return</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在上面拉出 java 的字节码清单之后，下面对其进行简单的解读</p>
+<h3 id="解析字节码清单"><a href="#解析字节码清单" class="headerlink" title="解析字节码清单"></a>解析字节码清单</h3><p>在上面的输出信息中，第二行也就是打印出来的字节码的第一行<code>Compiled from &quot;HelloByteCode.java&quot;</code>表示我们是从 HelloByteCode这个类反编译而来的字节码文件。4～8 行是一个构造函数，总所周知，如果我们在编写代码时不编写构造函数，就会生成一个默认的构造方法，这个就是默认的构造方法。而这个构造方法里也只有一条指令就是 <code>invokespecial</code> 这个是调用父类Object 对象的构造方法即 <code>super()</code> 方法。</p>
+<p>如果想要看到更多的信息则需要使用<code>javap -c -verbose</code> 命令输出更多信息。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><code class="hljs bash">daiwei@daiweideMacBook-Pro <span class="hljs-built_in">test</span> % javap -c -verbose HelloByteCode.class<br>Classfile /Users/daiwei/study/java-course/JVM/<span class="hljs-built_in">test</span>/HelloByteCode.class<br>  Last modified 2021-1-7; size 442 bytes<br>  MD5 checksum 8e2a795fb147ef48ba63f55886005f32<br>  Compiled from <span class="hljs-string">&quot;HelloByteCode.java&quot;</span><br>public class HelloByteCode<br>  minor version: 0<br>  major version: 52<br>  flags: ACC_PUBLIC, ACC_SUPER<br>Constant pool:<br>   <span class="hljs-comment">#1 = Methodref          #7.#16         // java/lang/Object.&quot;&lt;init&gt;&quot;:()V</span><br>   <span class="hljs-comment">#2 = Class              #17            // HelloByteCode</span><br>   <span class="hljs-comment">#3 = Methodref          #2.#16         // HelloByteCode.&quot;&lt;init&gt;&quot;:()V</span><br>   <span class="hljs-comment">#4 = Fieldref           #18.#19        // java/lang/System.out:Ljava/io/PrintStream;</span><br>   <span class="hljs-comment">#5 = String             #20            // hello</span><br>   <span class="hljs-comment">#6 = Methodref          #21.#22        // java/io/PrintStream.println:(Ljava/lang/String;)V</span><br>   <span class="hljs-comment">#7 = Class              #23            // java/lang/Object</span><br>   <span class="hljs-comment">#8 = Utf8               &lt;init&gt;</span><br>   <span class="hljs-comment">#9 = Utf8               ()V</span><br>  <span class="hljs-comment">#10 = Utf8               Code</span><br>  <span class="hljs-comment">#11 = Utf8               LineNumberTable</span><br>  <span class="hljs-comment">#12 = Utf8               main</span><br>  <span class="hljs-comment">#13 = Utf8               ([Ljava/lang/String;)V</span><br>  <span class="hljs-comment">#14 = Utf8               SourceFile</span><br>  <span class="hljs-comment">#15 = Utf8               HelloByteCode.java</span><br>  <span class="hljs-comment">#16 = NameAndType        #8:#9          // &quot;&lt;init&gt;&quot;:()V</span><br>  <span class="hljs-comment">#17 = Utf8               HelloByteCode</span><br>  <span class="hljs-comment">#18 = Class              #24            // java/lang/System</span><br>  <span class="hljs-comment">#19 = NameAndType        #25:#26        // out:Ljava/io/PrintStream;</span><br>  <span class="hljs-comment">#20 = Utf8               hello</span><br>  <span class="hljs-comment">#21 = Class              #27            // java/io/PrintStream</span><br>  <span class="hljs-comment">#22 = NameAndType        #28:#29        // println:(Ljava/lang/String;)V</span><br>  <span class="hljs-comment">#23 = Utf8               java/lang/Object</span><br>  <span class="hljs-comment">#24 = Utf8               java/lang/System</span><br>  <span class="hljs-comment">#25 = Utf8               out</span><br>  <span class="hljs-comment">#26 = Utf8               Ljava/io/PrintStream;</span><br>  <span class="hljs-comment">#27 = Utf8               java/io/PrintStream</span><br>  <span class="hljs-comment">#28 = Utf8               println</span><br>  <span class="hljs-comment">#29 = Utf8               (Ljava/lang/String;)V</span><br>&#123;<br>  public HelloByteCode();<br>    descriptor: ()V<br>    flags: ACC_PUBLIC<br>    Code:<br>      stack=1, locals=1, args_size=1<br>         0: aload_0<br>         1: invokespecial <span class="hljs-comment">#1                  // Method java/lang/Object.&quot;&lt;init&gt;&quot;:()V</span><br>         4: <span class="hljs-built_in">return</span><br>      LineNumberTable:<br>        line 1: 0<br><br>  public static void main(java.lang.String[]);<br>    descriptor: ([Ljava/lang/String;)V<br>    flags: ACC_PUBLIC, ACC_STATIC<br>    Code:<br>      stack=2, locals=2, args_size=1<br>         0: new           <span class="hljs-comment">#2                  // class HelloByteCode</span><br>         3: dup<br>         4: invokespecial <span class="hljs-comment">#3                  // Method &quot;&lt;init&gt;&quot;:()V</span><br>         7: astore_1<br>         8: getstatic     <span class="hljs-comment">#4                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br>        11: ldc           <span class="hljs-comment">#5                  // String hello</span><br>        13: invokevirtual <span class="hljs-comment">#6                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V</span><br>        16: <span class="hljs-built_in">return</span><br>      LineNumberTable:<br>        line 3: 0<br>        line 4: 8<br>        line 5: 16<br>&#125;<br>SourceFile: <span class="hljs-string">&quot;HelloByteCode.java&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>这次的输出比之前一次多了不少的信息，首先是 10～39 行的常量池信息。这里记录了代码中用到的常量。40～68行是之前代码部分的字节码，这一次多了一些如 <code>descriptor, flags</code> 的信息。descriptor 是方法的描述符，flags 则是方法的访问描述符，这是个 public static 方法。第45行的 <code>stack=1, locals=1, args_size=1</code> 表示方法栈的深度为1， 本地局部变量表大小为1 ，方法的入参为1。这里有个比较有意思的地方，就是无参构造的 args_size 不为0 而是 1 ，这是因为对于构造方法需要有一个引用地址，也就是 this 的引用地址，这个可以类比反射里面<code>Method#invoke(Object obj, Object... args);</code> 第一个参数是被调用对象一样。</p>
+<h3 id="线程栈和字节码执行模型"><a href="#线程栈和字节码执行模型" class="headerlink" title="线程栈和字节码执行模型"></a>线程栈和字节码执行模型</h3><p>JVM 是基于栈的计算机模型，每一个线程都有自己的线程栈（JVM stack）和用于存储的<code>栈帧</code>（Frame），每调用一个方法JVM都会自动创建一个栈帧，栈帧中包括<code>操作数栈</code>，<code>局部变量数组</code>和一个 <code>class 引用</code>构成，class 引用指向当前方法在运行时常量池中对应的class。</p>
+<p>​       <img src="https://gitee.com/realDaiwei/img/raw/master/20210507003351.png" srcset="/img/loading.gif"></p>
+<p><code>局部变量数组</code> 也成为 <code>局部方法表</code>（LocalVariableTable），其中包括方法的参数和局部变量。局部变量数组长度在编译时就已经确定。和局部变量和方法形参有关，但是具体长度还要看具体每个字段占用的长度。<code>操作数栈</code>（Operand Stack）是一个 LIFO 的结构栈，通过于压入弹出进行数据操作，其大小在编译时确定。</p>
+<p>一些操作码/指令可以将值压入操作数栈，还有一些操作码/指令从操作数栈获取操作数，并进行计算，然后再压入操作数栈。操作数栈还用于接受调用其他方法的返回值。</p>
+<h3 id="方法体中的字节码解析"><a href="#方法体中的字节码解析" class="headerlink" title="方法体中的字节码解析"></a>方法体中的字节码解析</h3><p>在前面的几个例子当中，字节码看起来问题都不大，但是看方法体中的字节码的编号有点看不懂，也就是下面的一些字节码</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">0:</span> <span class="hljs-string">new</span>           <span class="hljs-comment">#2                  // class HelloByteCode</span><br><span class="hljs-attr">3:</span> <span class="hljs-string">dup</span><br><span class="hljs-attr">4:</span> <span class="hljs-string">invokespecial</span> <span class="hljs-comment">#3                  // Method &quot;&lt;init&gt;&quot;:()V</span><br><span class="hljs-attr">7:</span> <span class="hljs-string">astore_1</span><br><span class="hljs-attr">8:</span> <span class="hljs-string">return</span><br></code></pre></td></tr></table></figure>
+
+<p>前面的一排数字是<code>指令集数组中的索引</code> new 操作占用一个槽位，并且 new 指令需要消耗两个操作数，所以 dup 指令是从<code>3</code>开始的，<code>dup</code> 指令不需要操作数，所以只占一个槽位。位于<code>4</code>号槽位中的 <code>invokespecial</code> 指令同样需要消耗两个操作数，所以 astore_1 从7号槽位开始。<code>astore_1</code>意思是将栈顶元素存入局部变量表1号槽位，不需要操作数，所以 <code>return</code> 位于<code>8</code>号槽位。<img src="https://gitee.com/realDaiwei/img/raw/master/20210507003454.png" srcset="/img/loading.gif"></p>
+<p>通过操作码/指令对照表并换算十六进制（HEX）表示形式之后。</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003612.png" srcset="/img/loading.gif"></p>
+<p>也就是我们通过十六进制打开.class 文件所能看到的数据片段了。</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003708.png" srcset="/img/loading.gif"></p>
+<h3 id="对象初始化指令"><a href="#对象初始化指令" class="headerlink" title="对象初始化指令"></a>对象初始化指令</h3><p>new 是Java 的关键字，但是在字节码中，也有一个指令 new 但是整个 new 的逻辑，可以分为以下的字节码</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">0: new           <span class="hljs-comment">#2                  // class HelloByteCode</span><br>3: dup<br>4: invokespecial <span class="hljs-comment">#3                  // Method &quot;&lt;init&gt;&quot;:()V</span><br></code></pre></td></tr></table></figure>
+
+<p>new 指令和 invokespecial 指令在一起，那么这段字节码一定是在实例一个对象。那为什么实例一个对象不是一个指令而是三个指令呢？</p>
+<ul>
+<li><code>new</code> 指令只是创建对象，而并没有调用构造函数。</li>
+<li><code>dup</code> 复制栈顶元素。这里为什么要复制栈顶元素呢？因为构造函数不会返回实例对象引用，所以没用dup指令，操作数栈是空的，初始化之后就会有问题。</li>
+<li><code>invokespecial</code> 字面意思，调用特殊的方法，在这里就是调用构造函数。</li>
+</ul>
+<p>完成了上面的代码后一般会执行的指令会有下面几种：</p>
+<ul>
+<li><code>astore &#123;N&#125;</code> 或者 <code>astore_&#123;N&#125;</code> 给局部变量赋值，其中{N}代表局部变量表中的位置。</li>
+<li><code>putfield</code>  将值赋给实例。</li>
+<li><code>putstatic</code> 将实例赋给静态字段。</li>
+</ul>
+<p>这个时候如果没有那个 dup 的引用的话这里就没有就没法进行出栈赋值操作。</p>
+<p>在调用构造函数之前，还会执行一个类似 <init> 的方法。但是 <clinit> 并不能被直接调用，而是由 <code>new</code>，<code>getstatic</code>，<code>putstatic</code> 或 <code>invokestatic</code> 触发。</p>
+<p>也就是说，在实例化一个对象，访问静态字段或一些静态方法，就会触发这个类的静态初始化方法。</p>
+<h3 id="栈内存操作指令"><a href="#栈内存操作指令" class="headerlink" title="栈内存操作指令"></a>栈内存操作指令</h3><p>有很多指令可以操作方法栈。压入栈数据和从数据栈弹出数据等一些基础的操作，有 <code>dup</code> 复制栈顶元素，和 <code>pop</code> 弹出栈顶元素的指令。还有一些复杂点的指令例如：</p>
+<ul>
+<li><code>swap</code> ：交换两个栈顶元素。</li>
+<li><code>dup_x1</code>：复制栈顶的值, 并将复制的值插入到最上面2个值的下方。</li>
+<li><code>dup2_x1</code>：制栈顶 1个64位/或2个32位的值, 并将复制的值按照原始顺序，插入原始值下面一个32位值的下方。 配合使用可用于交换两个64位数据的位置。</li>
+</ul>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003819.png" srcset="/img/loading.gif"></p>
+<blockquote>
+<p>数据类型分组（1代表32 位元素， 2代表64位元素）</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>实际类型</th>
+<th>JVM 计算类型</th>
+<th>类型分组</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>boolean</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr>
+<td>byte</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr>
+<td>char</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr>
+<td>short</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr>
+<td>int</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr>
+<td>float</td>
+<td>float</td>
+<td>1</td>
+</tr>
+<tr>
+<td>refrence</td>
+<td>refrence</td>
+<td>1</td>
+</tr>
+<tr>
+<td>retrunAddress</td>
+<td>retrunAddress</td>
+<td>1</td>
+</tr>
+<tr>
+<td>long</td>
+<td>long</td>
+<td>2</td>
+</tr>
+<tr>
+<td>double</td>
+<td>double</td>
+<td>2</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ 理解这些字节码的诀窍在于</p>
+<p>给局部变量赋值时，需要使用相应的指令来进行 <code>store</code> ，如 <code>astore_1</code>、 <code>store</code> 类的指令都会删除栈顶值。 相应的 load 指令则会将值从局部变量表压入操作数栈，但并不会删除局部变量中的值。</p>
+</blockquote>
+<h3 id="算术运算指令与类型转换指令"><a href="#算术运算指令与类型转换指令" class="headerlink" title="算术运算指令与类型转换指令"></a>算术运算指令与类型转换指令</h3><p>Java 字节码有很多的指令可以执行算术运算。对于所有数值类型（<code>int</code>, <code>long</code>, <code>double</code>, <code>float</code>）都有各自的加、减、乘、除、取反指令。当然boolean、byte、short、char 等都是当 int 类型处理。</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003904.png" srcset="/img/loading.gif"></p>
+<p>在java 是一个强类型的语言，如果类型不匹配需要进行类型转换，如果<code>int</code>需要转换为 <code>double</code> 会调用 i2d 指令进行类型转换。</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003936.png" srcset="/img/loading.gif"></p>
+<p>唯一一个不需要将数值load到操作数栈的指令是 <code>iinc</code>，他可以直接对 <code>LocalVariableTable</code> 中的数值进行运算。其他的操作均使用操作数栈进行运算。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-7.html">操作码对照表</a></p>
+</blockquote>
+<h3 id="方法调用指令"><a href="#方法调用指令" class="headerlink" title="方法调用指令"></a>方法调用指令</h3><p>在前面已经到了 <code>invokespceial</code> 调用构造方法，那调用其他不同类型的方法用什么指令呢？</p>
+<ul>
+<li><code>invokestatic</code> 调用静态方法，也是几个调用指令当中最快的。</li>
+<li><code>invokespeical</code> 可以用来调用构造方法，同时这个指令也可以用来调用 <code>private</code> 方法 和可见的 <code>super</code> 中的方法。</li>
+<li><code>invokevirtual</code> 可以调用目标对象的实例方法。</li>
+<li><code>invokeinterface</code> 用于调用目标接口方法，可以在运行时搜索一个实现这个接口的对象，并找出合适的方法进行调用。</li>
+<li><code>invokedynamic</code> jdk 1.7 新加入的一个虚拟机指令，前四条指令的分派逻辑在虚拟机内部是固定的，<code>invokedynamic</code> 它允许应用代码来确定具体执行的是那个方法，从而到达对动态语言的支持。Lambda 表达式基于 <code>invokedynamic</code> 实现。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这个部分简单介绍了Java 字节码，从开篇介绍怎么拉取一个 Java 代码的字节码开始，逐步复习了jvm 方法栈的栈帧，也就是 字节码的执行环境，这个部分由一个操作数栈，一个本地局部变量表和一个class 引用构成。通过分析一些常见的字节码例如构造函数和一些简单的方法体，熟悉了解了一些基本的操作码，例如 dup、pop、istore、iload 等指令。其中理解的诀窍在于 给局部变量赋值时，需要使用相应的指令来进行 <code>store</code> ，如 <code>astore_1</code>、 <code>store</code> 类的指令都会删除栈顶值。 相应的 load 指令则会将值从局部变量表压入操作数栈，但并不会删除局部变量中的值。当然在这些基本的操作指令中还包括一些类型转换的指令和方法的调用的指令，方法调用到后面会有专门梳理。</p>
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/JVM/">JVM</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/JVM/">JVM</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Java%E7%9F%A5%E8%AF%86%E7%BB%93%E6%9E%84%E6%A2%B3%E7%90%86%EF%BC%8C%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">Java知识结构梳理，学习总结</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/03/28/leetcodes/">
+                        <span class="hidden-mobile">leetcodes 习题汇总</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+  </div>
+  
+
+  
+
+  
+</footer>
+
+<!-- SCRIPTS -->
+
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.0/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      $('#local-search-input').on('click', function() {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      });
+      $('#modalSearch').on('shown.bs.modal', function() {
+        $('#local-search-input').focus();
+      });
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+
+</body>
+</html>
