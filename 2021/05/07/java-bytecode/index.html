@@ -230,7 +230,7 @@
             <h1 style="display: none">JVM 基础—Java 字节码</h1>
             
             <div class="markdown-body">
-              <h1 id="JVM-基础—Java-字节码"><a href="#JVM-基础—Java-字节码" class="headerlink" title="JVM 基础—Java 字节码"></a>JVM 基础—Java 字节码</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>我们通常表述的 JVM 通常有三种意思，JVM 是 Java virtual machine 即 java 虚拟机的缩写，也就是我们通常所指的 JVM。JVM还是一种用于计算设备的规范，它是一个虚构出来的计算机，是通过在实际的计算机上仿真模拟各种计算机功能来实现的。因此 JVM 也是图灵完备的。当然 JVM 还可以表示一个虚拟机的实例。Java 一个非常重要的特性就是和平台无关，而 JVM 是实现这一点的关键。JVM 底层使用 C 进行编写，只要平台能执行 C 语言，这也就能启动 JVM 运行 Java 程序。JVM 通过编译 Java 语言生成字节码文件，字节码文件在通过 JVM 进行解释执行。因此只要运行在不同的平台上的JVM 能拿到字节码文件，就能解释执行出相同的结果。这就是 Java 可以 “一次编译，到处执行” 的原因。 </p>
+              <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>我们通常表述的 JVM 通常有三种意思，JVM 是 Java virtual machine 即 java 虚拟机的缩写，也就是我们通常所指的 JVM。JVM还是一种用于计算设备的规范，它是一个虚构出来的计算机，是通过在实际的计算机上仿真模拟各种计算机功能来实现的。因此 JVM 也是图灵完备的。当然 JVM 还可以表示一个虚拟机的实例。Java 一个非常重要的特性就是和平台无关，而 JVM 是实现这一点的关键。JVM 底层使用 C 进行编写，只要平台能执行 C 语言，这也就能启动 JVM 运行 Java 程序。JVM 通过编译 Java 语言生成字节码文件，字节码文件在通过 JVM 进行解释执行。因此只要运行在不同的平台上的JVM 能拿到字节码文件，就能解释执行出相同的结果。这就是 Java 可以 “一次编译，到处执行” 的原因。 </p>
 <p>当然并不是Java 语言是跨平台的语言，拿 C++ 举个例子，C++ 也是一门跨平台的语言，但是和 Java 语言不同的是，C++ 需要到不同的平台生成不同的文件，然后进行执行，也就是源码跨平台，而 Java 是二进制跨平台。</p>
 <p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003029.png" srcset="/img/loading.gif"></p>
 <h2 id="Java-字节码技术"><a href="#Java-字节码技术" class="headerlink" title="Java 字节码技术"></a>Java 字节码技术</h2><h3 id="概述-1"><a href="#概述-1" class="headerlink" title="概述"></a>概述</h3><p>Java 代码通过编译生成 Java 字节码即 .class 文件，不同的 JVM 通过执行 .class 文件实现跨平台。Java bytecode 由但字节 （byte）的指令组成，理论上最多支持 256 个操作码（opencode）。实际上 Java 只用了 200 左右的操作码，还有一些操作码则保留给调试操作。操作码， 下面称为 指令 , 主要由 类型前缀 和 操作名称 两部分组成。 </p>
@@ -376,6 +376,9 @@
 <li><code>invokedynamic</code> jdk 1.7 新加入的一个虚拟机指令，前四条指令的分派逻辑在虚拟机内部是固定的，<code>invokedynamic</code> 它允许应用代码来确定具体执行的是那个方法，从而到达对动态语言的支持。Lambda 表达式基于 <code>invokedynamic</code> 实现。</li>
 </ul>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这个部分简单介绍了Java 字节码，从开篇介绍怎么拉取一个 Java 代码的字节码开始，逐步复习了jvm 方法栈的栈帧，也就是 字节码的执行环境，这个部分由一个操作数栈，一个本地局部变量表和一个class 引用构成。通过分析一些常见的字节码例如构造函数和一些简单的方法体，熟悉了解了一些基本的操作码，例如 dup、pop、istore、iload 等指令。其中理解的诀窍在于 给局部变量赋值时，需要使用相应的指令来进行 <code>store</code> ，如 <code>astore_1</code>、 <code>store</code> 类的指令都会删除栈顶值。 相应的 load 指令则会将值从局部变量表压入操作数栈，但并不会删除局部变量中的值。当然在这些基本的操作指令中还包括一些类型转换的指令和方法的调用的指令，方法调用到后面会有专门梳理。</p>
+<h2 id="学习资料"><a href="#学习资料" class="headerlink" title="学习资料"></a>学习资料</h2><ul>
+<li>Java 字节码技术：不积细流，无以成江河。</li>
+</ul>
 
             </div>
             <hr>
@@ -385,7 +388,7 @@
                   <div class="post-meta mr-3">
                     <i class="iconfont icon-category"></i>
                     
-                      <a class="hover-with-bg" href="/categories/JVM/">JVM</a>
+                      <a class="hover-with-bg" href="/categories/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">Java虚拟机</a>
                     
                   </div>
                 
@@ -413,6 +416,12 @@
                 <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
+                    
+                      <a href="/2021/05/09/java-method-invoke/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">JVM 基础 — Java 方法调用、反射调用与异常</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
                     
                   </article>
                   <article class="post-next col-6">
