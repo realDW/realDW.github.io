@@ -20,7 +20,7 @@
   <meta name="author" content="Daiwei">
   <meta name="keywords" content="">
   
-  <title>JVM 基础—Java 字节码 - Daiwei‘s blog</title>
+  <title>JVM 基础 — Java 字节码 - Daiwei‘s blog</title>
 
   <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
 
@@ -165,7 +165,7 @@
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
           <div class="page-header text-center fade-in-up">
-            <span class="h2" id="subtitle" title="JVM 基础—Java 字节码">
+            <span class="h2" id="subtitle" title="JVM 基础 — Java 字节码">
               
             </span>
 
@@ -227,13 +227,13 @@
         <div class="py-5" id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">JVM 基础—Java 字节码</h1>
+            <h1 style="display: none">JVM 基础 — Java 字节码</h1>
             
             <div class="markdown-body">
-              <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>我们通常表述的 JVM 通常有三种意思，JVM 是 Java virtual machine 即 java 虚拟机的缩写，也就是我们通常所指的 JVM。JVM还是一种用于计算设备的规范，它是一个虚构出来的计算机，是通过在实际的计算机上仿真模拟各种计算机功能来实现的。因此 JVM 也是图灵完备的。当然 JVM 还可以表示一个虚拟机的实例。Java 一个非常重要的特性就是和平台无关，而 JVM 是实现这一点的关键。JVM 底层使用 C 进行编写，只要平台能执行 C 语言，这也就能启动 JVM 运行 Java 程序。JVM 通过编译 Java 语言生成字节码文件，字节码文件在通过 JVM 进行解释执行。因此只要运行在不同的平台上的JVM 能拿到字节码文件，就能解释执行出相同的结果。这就是 Java 可以 “一次编译，到处执行” 的原因。 </p>
+              <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我们通常表述的 JVM 通常有三种意思，JVM 是 Java virtual machine 即 java 虚拟机的缩写，也就是我们通常所指的 JVM。JVM还是一种用于计算设备的规范，它是一个虚构出来的计算机，是通过在实际的计算机上仿真模拟各种计算机功能来实现的。因此 JVM 也是图灵完备的。当然 JVM 还可以表示一个虚拟机的实例。Java 一个非常重要的特性就是和平台无关，而 JVM 是实现这一点的关键。JVM 底层使用 C 进行编写，只要平台能执行 C 语言，这也就能启动 JVM 运行 Java 程序。JVM 通过编译 Java 语言生成字节码文件，字节码文件在通过 JVM 进行解释执行。因此只要运行在不同的平台上的JVM 能拿到字节码文件，就能解释执行出相同的结果。这就是 Java 可以 “一次编译，到处执行” 的原因。 </p>
 <p>当然并不是Java 语言是跨平台的语言，拿 C++ 举个例子，C++ 也是一门跨平台的语言，但是和 Java 语言不同的是，C++ 需要到不同的平台生成不同的文件，然后进行执行，也就是源码跨平台，而 Java 是二进制跨平台。</p>
 <p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003029.png" srcset="/img/loading.gif"></p>
-<h2 id="Java-字节码技术"><a href="#Java-字节码技术" class="headerlink" title="Java 字节码技术"></a>Java 字节码技术</h2><h3 id="概述-1"><a href="#概述-1" class="headerlink" title="概述"></a>概述</h3><p>Java 代码通过编译生成 Java 字节码即 .class 文件，不同的 JVM 通过执行 .class 文件实现跨平台。Java bytecode 由但字节 （byte）的指令组成，理论上最多支持 256 个操作码（opencode）。实际上 Java 只用了 200 左右的操作码，还有一些操作码则保留给调试操作。操作码， 下面称为 指令 , 主要由 类型前缀 和 操作名称 两部分组成。 </p>
+<h2 id="Java-字节码技术"><a href="#Java-字节码技术" class="headerlink" title="Java 字节码技术"></a>Java 字节码技术</h2><h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>Java 代码通过编译生成 Java 字节码即 .class 文件，不同的 JVM 通过执行 .class 文件实现跨平台。Java bytecode 由但字节 （byte）的指令组成，理论上最多支持 256 个操作码（opencode）。实际上 Java 只用了 200 左右的操作码，还有一些操作码则保留给调试操作。操作码， 下面称为 指令 , 主要由 类型前缀 和 操作名称 两部分组成。 </p>
 <blockquote>
 <p>例如，’ i ‘ 前缀代表 ‘ integer ’，所以，’ iadd ‘ 很容易理解, 表示对整数执行加法运算。</p>
 </blockquote>

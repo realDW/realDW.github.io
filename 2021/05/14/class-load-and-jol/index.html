@@ -1,0 +1,566 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/blogFavicon.png">
+  <link rel="icon" href="/img/blogFavicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  
+    <meta name="description" content="">
+  
+  <meta name="author" content="Daiwei">
+  <meta name="keywords" content="">
+  
+  <title>JVM 基础 — 类加载机制和对象内存布局 - Daiwei‘s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.4.0/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.8.8","typing":{"enable":true,"typeSpeed":100,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"onlypost":false},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Daiwei's blog</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" href="javascript:">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner" id="banner" parallax=true
+         style="background: url('https://gitee.com/realDaiwei/img/raw/master/samuel-mcgarrigle-5ReuZSdtDC4-unsplash.jpg') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="JVM 基础 — 类加载机制和对象内存布局">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-05-14 22:17" pubdate>
+        2021年5月14日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      4.9k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      18
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">JVM 基础 — 类加载机制和对象内存布局</h1>
+            
+            <div class="markdown-body">
+              <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在前面一篇中提到了方法的调用，方法在类加载阶段会由符号引用替换实际引用或者方法表的索引。Java 的类加载机制又是怎么样的呢？这里聊一个小插曲，我记得我刚毕业那会去面中兴，基础的问题都回答的挺好的但是最后面试官问了我这个问题，Java 虚拟机是怎么加载一个类的？我当时脑子懵了，对象怎么加载到内存？对象是 new 出来的的啊，还要加载？我也对这块不太了解，然后面试官也就没深了问。但是现在看来，如果是进阶 Java 的话这是一个基础不能在基础的问题了。类加载了这还不算完，Java 的类是怎么保存的，我相信很多朋友会回答存放在堆里，那其他特殊的类型呢 例如 String 类型又是怎么存储的呢？我们在内存溢出的时候，对象怎么就把我们的堆给堆满了，每个对象占了多大的空间呢？请朋友们慢慢往下看。</p>
+<h2 id="类加载机制"><a href="#类加载机制" class="headerlink" title="类加载机制"></a>类加载机制</h2><p>想要知道一处的细节不如先鸟瞰全局，先了解类的声明周期是什么样的先有个大体的概念。在了解的类的声明周期之后才能更好的理解 JVM 是如何加载一个类的</p>
+<h3 id="类的生命周期"><a href="#类的生命周期" class="headerlink" title="类的生命周期"></a>类的生命周期</h3><p><img src="https://gitee.com/realDaiwei/img/raw/master/20210511003453.png" srcset="/img/loading.gif"></p>
+<p>上面这张图是非常经典的一张图，类的生命周期有7个步骤，分别是 <code>加载（Loading）</code>、 <code>验证（Verification）</code>、<code>准备（Preparation）</code>、<code>解析（Resolution）</code>、<code>初始化（Initialization）</code>、<code>使用（Using）</code>、<code>卸载（Unloading）</code>。其中前五个部分（加载、验证、准备、解析、初始化）统称为类加载。</p>
+<h4 id="加载"><a href="#加载" class="headerlink" title="加载"></a>加载</h4><p>加载阶段也称作”装载”阶段。这个阶段主要的操作是，更具明确知道的 class 完全限定名，来获取类的二进制的 .class 文件</p>
+<p>简单来说就是从文件系统/jar包中/或者网路中，任何地方存在的<code>class文件</code>，如果没找到会抛出 <code>NoClassDefFound</code> 错误。加载阶段不会检查 classfile 的格式和语法问题，只是单纯的加载文件。类加载的整个阶段由 JVM 和类加载器（某一个）共同协作完成。</p>
+<h4 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h4><p>验证阶段也是链接过程的第一个阶段，这个阶段的操作逻辑也很简单，就是确保 class 文件的字节流数据是符合虚拟机要求的不会危害到虚拟机的安全。简单来说就是一些格式和语法的校验，在这个过程中可能会抛出 <code>VerifyError</code>，<code>ClassFormatError</code> 或 <code>UnsupportedClassVersionError</code>，注意这里排除的 Error 错误，Error 只有虚拟机无法正常执行了才会抛出的异常。</p>
+<p>验证也是链接的一部分，所以在这个部分 JVM 必须加载所有的超类和接口。如果发现类的层次结构有问题 JVM 会抛出 <code>ClassCircularityError</code>。而如果实现接口不是一个 interface，或者声明的超类不是一个 interface 也会抛出 IncompatibleClassChangeError。</p>
+<h4 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h4><p>在这个阶段会创建静态字段并为其初始化标准默认值（比如 <code>null</code> 或者 0），并分配方法表，及在方法区中分配这些方法的使用的<code>内存空间</code>。⚠️ 请注意，在这个阶段没有执行任何的 Java 代码。</p>
+<h4 id="解析"><a href="#解析" class="headerlink" title="解析"></a>解析</h4><p>然后JVM 会进入可选的解析符号引用阶段。也就是解析类文件里面的常量池，主要有下面四种：类或接口的解析、字段解析、类方法解析、接口方法解析。在解析阶段要做的是就是把符号引用解析为直接引用（相当于直接指向了实际的对象），如果有了直接引用，那么引用的目标对象一定在堆中。</p>
+<h4 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h4><p>如果直接赋值的静态字段被 final 所修饰，并且它的类型是基本类型或字符串时，那么该字段便会被 Java 编译器标记成常量值（ConstantValue），其初始化直接由 Java 虚拟机完成。除此之外的直接赋值操作，以及所有静态代码块中的代码则会被 Java 编译器置于同一方法中，并把它命名为<code>&lt;clinit&gt;</code>。</p>
+<p>类只有在首次 “主动使用” 才能执行类的初始化。是 <clinit> 方法不是构造器，只有主动使用才会调用构造器方法。</p>
+<p>类加载的最后一步是初始化，便是为标记为常量值的字段赋值，以及执行 &lt; clinit &gt; 方法的过程。Java 虚拟机会通过加锁来确保类的 &lt; clinit &gt; 方法仅被执行一次。</p>
+<blockquote>
+<p>这个流程应该是每个Java 程序员都应该熟记于胸的，一开始我记忆这个部分也是硬着头皮记，也很容易忘。偶然有一天我在饭，突然发现这个类加载机制像做饭的过程。加载过程就像是买菜，类加载进入JVM 就像把菜买回家。然后菜买回来之后呢，要检查检查，确认买的菜都是对的，不然买错了或者什么漏买了就很尴尬了，这个过程呢就像类加载流程里面的验证，要检查字节码文件符合虚拟机要求不会危害到虚拟机安全。做饭也要需要准备，要洗菜择菜，就像我们的准备阶段为类准备分配内存空间。这部分结束了，我们就可以热锅开始做菜了。这个部分按照菜谱加入各种调味料，把各个食材混合在一起，就像解析，把各个符号引用替换为直接引用，让各个部分关联起来。然后我们菜就做好了，我们就可以装盘出锅了。这个部分就是类的初始化，经过这个部分之后，一个类就可以正常的使用了，我们也可以吃饭了，最后类使用完之后卸载，我们吃完了也就要洗碗了。哈哈是不是很像。</p>
+<p>加载 -&gt; 验证 -&gt; 准备 -&gt; 解析 -&gt; 初始化 -&gt; 使用 -&gt; 卸载。</p>
+<p>买菜 -&gt; 检查菜 -&gt; 洗菜 -&gt; 炒菜 -&gt; 装盘 -&gt; 吃饭 -&gt; 洗碗。 </p>
+</blockquote>
+<h3 id="类的加载时机"><a href="#类的加载时机" class="headerlink" title="类的加载时机"></a>类的加载时机</h3><p>类并不是在虚拟机一启动就会全部加载进来，而是会<code>按需加载</code>，那在什么时候才会加载目标类呢？</p>
+<ol>
+<li>当虚拟机启动时，初始化用户指定的主类。</li>
+<li>当遇到用以新建目标类实例的 new 指令时，初始化 new 指令的目标类。</li>
+<li>当遇到调用静态方法的指令时，初始化该静态方法所在的类。</li>
+<li>当遇到访问静态字段的指令时，初始化该静态字段所在的类。</li>
+<li>子类的初始化会触发父类的初始化。</li>
+<li>如果一个接口定义了 deault 方法，那么直接实现偶着间接实现该接口的类初始化，会触发该接口的初始化。</li>
+<li>使用反射 API 对某个类进行反射调用时，初始化这个类。</li>
+<li>当初次调用 MethodHandler 实例，初始该 MethodHandler 指向的方法所在类。</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Singleton</span> </span>&#123;<br>  <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-title">Singleton</span><span class="hljs-params">()</span> </span>&#123;&#125;<br>  <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">LazyHolder</span> </span>&#123;<br>    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Singleton INSTANCE = <span class="hljs-keyword">new</span> Singleton();<br>  &#125;<br>  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Singleton <span class="hljs-title">getInstance</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-keyword">return</span> LazyHolder.INSTANCE;<br>  &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这段代码是在著名的单例延迟初始化，只有当调用 Singleton.getInstance 时，程序才会访问 LazyHolder.INSTANCE，才会触发对 LazyHolder 的初始化（对应第 4 种情况），继而新建一个 Singleton 的实例。</p>
+<h3 id="类加载器机制"><a href="#类加载器机制" class="headerlink" title="类加载器机制"></a>类加载器机制</h3><p>类的加载过程可以描述为”通过一个类的全限定名 a.b.c.xxx.XXClass 来获取此类的 Class 对象。这个过程由类加载器来完成。这样的好处在于，子类加载器可以复用父加载器加载的类。系统自带的加载器分为三种：</p>
+<ul>
+<li><code>启动类加载器</code>（BootstrapClassLoader）</li>
+<li><code>扩展类加载器</code>（ExtClassLoader）</li>
+<li><code>应用类加载器</code>（AppClassLoader）</li>
+</ul>
+<p>一般启动类加载器是由 JVM 内部实现的，在 Java 的 API 里面是无法拿到了，是用 C++ 实现的，后面两种在 Oracle Hotspot JVM 中，都在 sun.misc.Lanucher 定义的，扩展类加载器和应用类加载器一般都继承自 <code>URLClassLoader</code> 类，这个类也默实现了从不同的源来加载 class 字节码换成的 Class 的方法。</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210512000947.png" srcset="/img/loading.gif"></p>
+<ol>
+<li>启动类加载器（bootstrap class loader）：它用来加载 Java 的核心类，用原生的 C++ 实现并不继承自 java.lang.Classloader。负责加载 JDK 中 <code>jre/lib/rt.jar</code> 中的所有 class。可以把它看作是 JVM 自带的，同时我们也无法获取它的引用。</li>
+<li>扩展类加载器（extensions class loader）：它用来加载 <code>lib/ext</code> 或者由系统路径 <code>java.ext.dirs</code> 指定的目录中的 Jar 包中的类。</li>
+<li>应用类加载器（application class loader）：它负责在 JVM 启动时加载来自 <code>Java 命令 -classpath</code> 或者 <code>-cp</code> 或者指定系统路径 <code>java.class.path</code> 系统属性指定的 jar 包和类路径。 可以通过 <code>ClassLoader.getSystemClassLoader()</code> 来获取类应用加载器。</li>
+</ol>
+<p>用户可以自定义类加载器，如果自定义类加载器，自定义的类加载器的应该以应用加载器作为父类。下面就是一个自定类加载器。</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs reasonml">public <span class="hljs-keyword">class</span> HelloXlassLoader extends ClassLoader &#123;<br><br>    public static void main(String<span class="hljs-literal">[]</span> args) &#123;<br>        <span class="hljs-keyword">try</span> &#123;<br>            Object hello = <span class="hljs-keyword">new</span> <span class="hljs-constructor">HelloXlassLoader()</span>.find<span class="hljs-constructor">Class(<span class="hljs-string">&quot;Hello&quot;</span>)</span>.<span class="hljs-keyword">new</span><span class="hljs-constructor">Instance()</span>;<br>            Method <span class="hljs-keyword">method</span> = hello.get<span class="hljs-constructor">Class()</span>.get<span class="hljs-constructor">Method(<span class="hljs-string">&quot;hello&quot;</span>)</span>;<br>            <span class="hljs-keyword">method</span>.invoke(hello);<br>        &#125; catch (Exception e) &#123;<br>            e.print<span class="hljs-constructor">StackTrace()</span>;<br>        &#125;<br>    &#125;<br><br>    @Override<br>    protected Class&lt;?&gt; find<span class="hljs-constructor">Class(String <span class="hljs-params">name</span>)</span> throws ClassNotFoundException &#123;<br>        byte<span class="hljs-literal">[]</span> <span class="hljs-built_in">bytes</span> = get<span class="hljs-constructor">BytesFromXXX()</span>;<br>        handle<span class="hljs-constructor">Bytes(<span class="hljs-params">bytes</span>)</span>;<br>        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">bytes</span>.length<span class="hljs-operator"> == </span><span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-module-access"><span class="hljs-module"><span class="hljs-identifier">System</span>.</span></span>out.println(<span class="hljs-string">&quot;file load error&quot;</span>);<br>        &#125;<br>        return define<span class="hljs-constructor">Class(<span class="hljs-params">name</span>, <span class="hljs-params">bytes</span>, 0, <span class="hljs-params">bytes</span>.<span class="hljs-params">length</span>)</span>;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>类加载器有三个特点：</p>
+<ol>
+<li><code>双亲委派</code>：大名鼎鼎的双亲委派其实很简单，也没有什么所谓的双亲，就是优先给父类加载器加载，如果父类加载不了再自己来加载。例如 String 类型，appClassLoader 看到了不加载，给 extClassLoader，extClassLoader 也不加载，给bootstrapClassLoader 加载，bootstrapClassLoader 一看 java.lang.String 是在 rt 包里的就给加载了。这也不是说加载器懒，这样可以保证，<code>某一个类每次都能被特定的某个加载器加载。</code></li>
+<li><code>负责依赖</code>：如果一个加载器在加载某个类的时候，发现这个类依赖的另外几个类或者接口，也会去是这尝试加载这些依赖。</li>
+<li><code>缓存加载</code>：为了提高效率避免重复加载，一旦某个类被一个加载器加载，那么它就会缓存这个加载结果，不会重复加载。这也是双亲委派的目的。</li>
+</ol>
+<h2 id="对象内存布局"><a href="#对象内存布局" class="headerlink" title="对象内存布局"></a>对象内存布局</h2><p>前面的部分我们聊到了，Java 对象是如何加载一个类的，但是我们要真正的使用一个对象，需要根据我们加载的类去创建一个对象。那创建的过程是怎么样的呢？</p>
+<h3 id="对象创建"><a href="#对象创建" class="headerlink" title="对象创建"></a>对象创建</h3><p>我想起来一个段子，把大象放进冰箱需要几步？需要三步！打开冰箱门，把大象放进冰箱，把门关上。其实我们的 Java 创建对象过程也可以大致分为三步，申请内存 —&gt; 初始化数据（代码块和构造）-&gt; 关联引用。</p>
+<ol>
+<li><code>构建对象</code>（申请空间），这个过程首先线程会申请一个栈空间，并且生成栈帧然后执行 new 操作。线程会根据加载的类信息申请一块内存构建对象，并且为成员变量赋默认值。</li>
+<li><code>对象初始化</code>，这个部分就是执行 {} 代码块和构造方法了。</li>
+<li><code>关联引用</code>，我们创建的对象的引用是在栈上面，然而我们创建的对象是在堆中，最后一步就是把栈上的对象引用指向堆中的地址。</li>
+</ol>
+<blockquote>
+<p>打开冰箱 = 申请空间，放入大象 = 对象初始化， 关联引用 = 关上冰箱门 </p>
+</blockquote>
+<h3 id="对象在内存的布局"><a href="#对象在内存的布局" class="headerlink" title="对象在内存的布局"></a>对象在内存的布局</h3><p>我们现在创建好了一个对象，难道一个对象在堆中存的就真的是一堆变量数据就没有其他的东西吗？</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210513231532.png" srcset="/img/loading.gif"></p>
+<p>对象在内存的中并不只有实例的数据，而是包含三个部分，<code>对象头</code>、<code>实例数据</code>、<code>内存填充</code>。</p>
+<ul>
+<li>对象头：按照实例对象的不同，对象头也有不同，主要的就是包含<code>Mark word</code>，<code>class pointer</code>，数组对象还包括数组长度。MarkWord 里面包含有对象的哈希码，锁信息，GC 等信息。ClassPointer 这个很明显，这是一个指针指向方法区的 Class 对象 ，在数组实例中还要记录数组的长度，在 64 位的系统中markWord占<code>8</code>个字节，如果开启指针压缩，这个大小可以压缩到 <code>4</code>个字节，也就是如果不开启指针压缩的话，再加上 class pointer 4 个字节，实例对象头 12 个字节，数组对象头占 16 个字节，开启指针压缩后，实例对象 对象头8个字节，数组对象对象头 12 个字节。</li>
+</ul>
+<blockquote>
+<p>对象头 不开启指针压缩 实例 12 字节，数组 16 字节，开启指针压缩 实例 8 字节，数组 12 字节。</p>
+</blockquote>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs awk">-XX:+UseCompressedOops  <span class="hljs-regexp">//</span> 开启指针压缩<br>-XX:-UseCompressedOops  <span class="hljs-regexp">//</span> 关闭指针压缩<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>实例数据：这个很好理解就是类实例中的数据。</li>
+<li>内存对齐：我们的 CPU 寄存器的位数都是 8 的倍数，所以为了方便 CPU 寄存器高效寻址，64 位 JVM 要求 Java 对象地址要按照 8 字节对齐。这个部分做数据填充保证 8 字节对齐。</li>
+</ul>
+<blockquote>
+<p>⚠️这里有个小知识点，Java 实例被 GC 之后，对象的 Hash 码会变码？那栈中的引用地址会变化吗？我们都知道 Java 对象的 Hash 码和对象地址有关系。如果一个对象被 GC 过后还存活的话，如果在 young 区，那地址大概率会发生变化，那Hash 码是不是也不一样呢？我们通过实验可以很容易验证这个问题，Hash 码不会发生变化，但是地址会发生变化，这是怎么做到的？来，抬头往上看，对象头中是不是有个哈希码信息。在第一次调用对象 hashCode 方法，就会把 hashCode 存在这里，后面的 hashCode 直接来这里取就好了。 </p>
+</blockquote>
+<p>整体的大致的对象存储布局就是酱婶儿的。</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210513235300.png" srcset="/img/loading.gif"></p>
+<h3 id="JOL-实践"><a href="#JOL-实践" class="headerlink" title="JOL 实践"></a>JOL 实践</h3><p>什么是 JOL ？JOL （Java object layout）Java 对象内存布局，是 openjdk 给我们提供了一个工具包，可以用来获取对象的信息和虚拟机的信息 。我们来引入下 jol-core 的依赖。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>  <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.openjdk.jol<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>  <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>jol-core<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>  <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>0.15<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<p>主要会用到的方法：</p>
+<ul>
+<li><code>ClassLayout.parseInstance(object).toPrintable()</code>：查看对象内部信息。</li>
+<li><code>GraphLayout.parseInstance(object).toPrintable()</code>：查看对象外部信息，包括引用的对象。</li>
+<li><code>GraphLayout.parseInstance(object).totalSize()</code>：查看对象总大小。</li>
+</ul>
+<p>我们创建一个普通对象，空对象开开胃。</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-symbol">A</span> &#123;&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个对象一个成员变量都没有，那么一个 A 实例占用几个字节呢？我们没有开启指针压缩，markWord 8 个字节， class pointer 4 个字节，8 + 4 = 12 然后 8 个字节对齐 也就是 16 个字节。我们使用 JOL 打印出来看看。</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-keyword">public</span> static <span class="hljs-built_in">void</span> main(String[] args) &#123;<br>    A a = new A();<br>    System.<span class="hljs-keyword">out</span>.println(ClassLayout.parseInstance(a).toPrintable());<br>&#125;<br><br><span class="hljs-comment">// console～</span><br>io.daiwei.jvm.jol.A object <span class="hljs-built_in">int</span>ernals:<br>OFF  SZ   TYPE DESCRIPTION               VALUE<br>  <span class="hljs-number">0</span>   <span class="hljs-number">8</span>        (object header: mark)     <span class="hljs-number">0x0000000000000001</span> (non-biasable; age: <span class="hljs-number">0</span>)<br>  <span class="hljs-number">8</span>   <span class="hljs-number">4</span>        (object header: <span class="hljs-keyword">class</span>)    <span class="hljs-symbol">0xf800c182</span><br> <span class="hljs-symbol">12</span>   <span class="hljs-symbol">4</span>        (<span class="hljs-symbol">object</span> <span class="hljs-symbol">alignment</span> <span class="hljs-symbol">gap</span>)    <br><span class="hljs-symbol">Instance</span> <span class="hljs-symbol">size: <span class="hljs-symbol">16</span></span> <span class="hljs-symbol">bytes</span><br><span class="hljs-symbol">Space</span> <span class="hljs-symbol">losses: <span class="hljs-symbol">0</span></span> <span class="hljs-symbol">bytes</span> <span class="hljs-symbol">internal</span> + <span class="hljs-symbol">4</span> <span class="hljs-symbol">bytes</span> <span class="hljs-symbol">external</span> = <span class="hljs-symbol">4</span> <span class="hljs-symbol">bytes</span> <span class="hljs-symbol">total</span><br></code></pre></td></tr></table></figure>
+
+<p> 那么一个数组对象呢？我们前面提到数组对象实例对象头中会多一个<code>length field</code>用来存数组的长度。按照我们的计算逻辑，我们没开启指针压缩，markWord 占用 8 个字节，classPonter 占 4 个字节，因为数数组对象多一个 lengthField 4 个字节。也就是 4 + 4 + 8 = 16，刚好对齐 16 个字节。真的是这样吗？没落下什么吗？</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs tap">public static void main(String[] args) &#123;<br>    int[] nums = new int[10];<br>    System.out.println(ClassLayout.parseInstance(nums).toPrintable());<br>&#125;<br><br>// console～<br>[I object internals:<br>OFF  SZ   TYPE DESCRIPTION               VALUE<br> <span class="hljs-number"> 0 </span> <span class="hljs-number"> 8 </span>       (object header: mark)     0x0000000000000001 (non-biasable; age: 0)<br> <span class="hljs-number"> 8 </span> <span class="hljs-number"> 4 </span>       (object header: class)    0xf800016d<br><span class="hljs-number"> 12 </span> <span class="hljs-number"> 4 </span>       (array length)            10<br><span class="hljs-number"> 12 </span> <span class="hljs-number"> 4 </span>       (alignment/padding gap)   <br><span class="hljs-number"> 16 </span><span class="hljs-number"> 40 </span>   int [I.&lt;elements&gt;             N/A<br>Instance size:<span class="hljs-number"> 56 </span>bytes<br>Space losses:<span class="hljs-number"> 4 </span>bytes internal +<span class="hljs-number"> 0 </span>bytes external =<span class="hljs-number"> 4 </span>bytes total<br></code></pre></td></tr></table></figure>
+
+<p> 实际的实例的大小是56，仔细看，打印结果的第13行，多了 40 个字节，这是啥呢？没错是我们长度为10的数组内容，一个 int 类型四个字节就是 40 个字节。所以最终的大小就是 16 + 40 = 56 刚好也不用对齐～。 </p>
+<p>再来看一个例子，一个稍微正常点的对象 B。</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-symbol">B</span> &#123;<br><br>    <span class="hljs-keyword">private</span> String hello;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-built_in">int</span> a;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-built_in">bool</span>ean b;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>B 对象包含，一个 String，一个int 和一个 boolean，我们根据之前的经验可以推出 没有开启指针压缩，对象头12个字节，String 是一个引用4个字节，int  4 个字节，boolean 一个字节，所以 12 + 4 + 4 + 1 =  21 个字节，然后内存对齐，实例大小 24 个字节。</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs reasonml">public static void main(String<span class="hljs-literal">[]</span> args) &#123;<br>    B b = <span class="hljs-keyword">new</span> <span class="hljs-constructor">B()</span>;<br>    <span class="hljs-module-access"><span class="hljs-module"><span class="hljs-identifier">System</span>.</span></span>out.println(<span class="hljs-module-access"><span class="hljs-module"><span class="hljs-identifier">ClassLayout</span>.</span></span>parse<span class="hljs-constructor">Instance(<span class="hljs-params">b</span>)</span>.<span class="hljs-keyword">to</span><span class="hljs-constructor">Printable()</span>);<br>&#125;<br><br><span class="hljs-comment">// console～</span><br>io.daiwei.jvm.jol.B <span class="hljs-keyword">object</span> internals:<br>OFF  SZ               TYPE DESCRIPTION               VALUE<br>  <span class="hljs-number">0</span>   <span class="hljs-number">8</span>                    (<span class="hljs-keyword">object</span> header: mark)     <span class="hljs-number">0x0000000000000001</span> (non-biasable; age: <span class="hljs-number">0</span>)<br>  <span class="hljs-number">8</span>   <span class="hljs-number">4</span>                    (<span class="hljs-keyword">object</span> header: <span class="hljs-keyword">class</span>)    <span class="hljs-number">0xf800c143</span><br> <span class="hljs-number">12</span>   <span class="hljs-number">4</span>                <span class="hljs-built_in">int</span> <span class="hljs-module-access"><span class="hljs-module"><span class="hljs-identifier">B</span>.</span></span>a                       <span class="hljs-number">0</span><br> <span class="hljs-number">16</span>   <span class="hljs-number">1</span>            boolean <span class="hljs-module-access"><span class="hljs-module"><span class="hljs-identifier">B</span>.</span></span>b                       <span class="hljs-literal">false</span><br> <span class="hljs-number">17</span>   <span class="hljs-number">3</span>                    (alignment/padding gap)   <br> <span class="hljs-number">20</span>   <span class="hljs-number">4</span>   java.lang.String <span class="hljs-module-access"><span class="hljs-module"><span class="hljs-identifier">B</span>.</span></span>hello                   null<br>Instance size: <span class="hljs-number">24</span> <span class="hljs-built_in">bytes</span><br>Space losses: <span class="hljs-number">3</span> <span class="hljs-built_in">bytes</span> internal + <span class="hljs-number">0</span> <span class="hljs-built_in">bytes</span> <span class="hljs-keyword">external</span> = <span class="hljs-number">3</span> <span class="hljs-built_in">bytes</span> total<br></code></pre></td></tr></table></figure>
+
+<p>没毛病，最终实例大小 24 个字节。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这一小节呢，我们从类的生命周期入手深入了解了类的加载过程和实例在内存中的对象布局，类的生命周期分为 加载，验证，准备，解析，初始化，使用、卸载。过程可以类比做菜的过程。其中类并不是在 JVM 启动时全部加载而是按需加载的。接下来我们介绍了类加载器，有启动类加载器，拓展类加载器和应用类加载器。他们采用双亲委派的方式，所谓的双亲委派就是先由父类加载，父类如果加载在不了再由子类加载，这样可以保证每个类每次都由某个特定的类加载器加载。我们还可以自定义类加载实现加载逻辑的自定义化，这个自定义类加载器的父类是应用类加载器。聊完类的加载，我们探讨了实例的内存布局，一个实例分为对象头，实例数据和填充数据这三个部分，其中对象头又包括 markWord、klassPointer和数组对象特有的 lengthField，对象头的大小受是否开启指针压缩有关。最后我们使用 openJDK 提供的JOL工具验证了我们的理论对象布局理论。这是JVM基础正式篇的最后一小节，接下来我们会一起探讨 JVM 的内存，GC 和 高效编译的部分。接下来的 JVM 会更加精彩，我们一起来看看，有了这些东西 JVM 会玩出些啥不一样的。哈哈，晚安～</p>
+<h2 id="学习资料"><a href="#学习资料" class="headerlink" title="学习资料"></a>学习资料</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/142614439">JVM基础（三）一个对象的创建过程</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/jajian/p/13681781.html">Java 对象的内存布局</a></li>
+<li>Java类加载器：山不辞土，故能成其高 </li>
+</ul>
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">Java虚拟机</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/JVM/">JVM</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Java%E7%9F%A5%E8%AF%86%E7%BB%93%E6%9E%84%E6%A2%B3%E7%90%86/">Java知识结构梳理</a>
+                    
+                      <a class="hover-with-bg" href="/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">学习总结</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/05/09/java-method-invoke/">
+                        <span class="hidden-mobile">JVM 基础 — Java 方法调用、反射调用与异常</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+  </div>
+  
+
+  
+
+  
+</footer>
+
+<!-- SCRIPTS -->
+
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.0/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      $('#local-search-input').on('click', function() {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      });
+      $('#modalSearch').on('shown.bs.modal', function() {
+        $('#local-search-input').focus();
+      });
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+
+</body>
+</html>
