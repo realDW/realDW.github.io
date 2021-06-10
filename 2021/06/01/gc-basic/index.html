@@ -187,7 +187,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      8.1k 字
+      9.4k 字
     </span>
   
 
@@ -197,7 +197,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      28
+      32
        分钟
     </span>
   
@@ -291,6 +291,32 @@
 <blockquote>
 <p>想要深入理解 finalize 机制的可以看这篇文章，虽然是全英文的但看起来压力并没有那么大 <a target="_blank" rel="noopener" href="https://plumbr.io/blog/garbage-collection/debugging-to-understand-finalizer">debugging-to-understand-finalizer</a></p>
 </blockquote>
+<h4 id="并发的可达性分析"><a href="#并发的可达性分析" class="headerlink" title="并发的可达性分析"></a>并发的可达性分析</h4><p>很多东西沾上了并发，事情的复杂度也就上去了但是仔细梳理下来也没那么复杂。可达性分析算法理论上要求全过程都是基于能保证一致性的快照中才能进行分析的，这样就意味着需要STW，冻结所有应用线程。在枚举根节点因为GC Roots 是极少数，STW是能接受的。而堆整个堆进行可达性分析时 STW，对于并发的垃圾收集器来说是不能接受的。因此实现并发的可达性分析至关重要。可达性算法归根到底就是图的遍历，那么这个问题可以转化为，<strong>如果在引用处于变化状态下，完成基本准确的遍历。</strong>为什么是基本的呢？因为边是处于变化状态的，基本不可能标记出来的结果百分百准确。在这个场景中，我们要保证一个最基本的原则：<code>可以错标，但是不能漏标记</code>。<strong>如果错标也就会产生一些浮动垃圾，漏标就会导致对象消失会影响应用线程。</strong>那我们要怎么在引用变化的过程中进行动态标记呢？这里我们引入<code>三色标记（Tri-color Marking）</code>，在遍历对象图过程中遇到的对象，我们按照<strong>“是否访问过”</strong>这个条件标记成下面三种颜色。</p>
+<ul>
+<li><strong>白色：</strong>表示尚未被垃圾收集器标访问过。在标记开始时，所有的对象都是白色的，<strong>当标记结束时，如果对象还是白色的那表明对象不可达</strong>。</li>
+<li><strong>黑色</strong>：表示对象已经被垃圾收集器访问过，并且每个这个对象的所有引用都已经扫描过了，如果一个对象是黑色的那它就是<strong>有效的可达对象。</strong>黑色对象不可能直接指向某个白色对象。所以黑色对象不需要重新扫描。</li>
+<li><strong>灰色：</strong>表示对象已经被垃圾收集器扫描过，但是<strong>至少存在一个引用还没有被扫描过。</strong></li>
+</ul>
+<p>在引用关系不变化应用线程冻结的情况下，整个图遍历过程会由几个点开始，然后图会像水波纹一样各个节点从白变成黑。</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210607223934.png" srcset="/img/loading.gif"></p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210607223854.png" srcset="/img/loading.gif"> </p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210607224130.png" srcset="/img/loading.gif"></p>
+<p>上面这几张图是在应用线程停止的情况下，如果是在回收线程与应用线程并发，应用线程不断的修改引用关系的情况下，会发生什么情况呢？就像上面我们提到的，我们可以容忍少量的错标（<strong>原本应该回收的对象，但是标记成了黑色</strong>）但不可以容忍漏标（<strong>原本不该被回收的对象，因为没有标记上黑色而被回收</strong>）。来我们一起看看下面两个漏标的情况。</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210607230158.png" srcset="/img/loading.gif"></p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210607230554.png" srcset="/img/loading.gif"></p>
+<p>通过上面的图我们不难发现两种情况都有一个相同问题：<strong>删除了灰色对象到某个白色对象之间的所有引用，并且同时一个标记过的黑色对象指向了这个白色或者这个白色对象所在链上的白色对象</strong>，归纳下来就是两个相同的动作：</p>
+<ul>
+<li><code>赋值器插入了一条或多条从黑色对象到白色对象的新引用。</code></li>
+<li><code>赋值器删除了全部从灰色对象到该白色对象的直接或者间接引用。</code></li>
+</ul>
+<p>当这两个条件同时成立时候，就会产生消失对象。所以只要能破坏两个当中的一个条件问题就解决了。那解决方案有下面两个：</p>
+<ol>
+<li><code>增量更新（Increment Update）</code>：破坏第一个条件，如果发现有从黑色对象指向白色对象的引用，那么就把这个这个引用记录下来，在最后标记STW的时候，以黑色对象为根重新标记一遍，<strong>简单来说就是，黑色对象一旦新插入了白色对象的引用，那么就把这个黑色对象变成灰色，最后在遍历一次。CMS采用的就是这种方式。</strong></li>
+<li><code>原始快照（Snapshot At The Beginning， SATB）</code>：破坏第二个条件，如果发现灰色对象删除指向白色对象的引用，就把这个引用记录下来，并且在最后标记的时候，以当时的灰色对象为根，按照原来的引用关系再标记一次。<strong>简单来说，无论引用关系是否删除，就按照刚开始扫描那一刻的快照进行遍历，G1 采用的是这种方式。</strong></li>
+</ol>
+<blockquote>
+<p>我之前一直在思考一个问题，新分配或新创建的对象怎么办？CMS中在并发标记时候，新晋升的对象刚进入老年代一定是白的，这怎么处理？后来我发现在并发预处理（Concurrent perclean）阶段，会标记一遍晋升对象。G1 的话则采用TAMS（Top at Mark Start）技术默认标记新分配的对象。这样就不会漏标新对象了。</p>
+</blockquote>
 <h2 id="垃圾收集算法"><a href="#垃圾收集算法" class="headerlink" title="垃圾收集算法"></a>垃圾收集算法</h2><p>我们都知道我们对象实例是分配在堆空间中是一块连续的内存，我们会在在创建内存的时候都是在堆空间上分配一个块内存。由于实际情况的不同，每个实例对象的生命周期都不一样。有的对象可能刚分配使用完成就会被回收，有的可能会存在很长一段时间。这样垃圾回收器多次工作下来内存中可能存在多个内存间隙而导致新的对象无法继续分配。这明显不能充分利用有限的堆内存空间装尽可能多的对象。如果将一块完整的堆内存空间切分成多个逻辑空间，每个空间放生命周期不一样的对象，在每个逻辑空间使用不一样的收集策略是否就能尽可能的提高空间的使用率呢？当然是可以的，我们一起往下看。</p>
 <h3 id="分代收集理论"><a href="#分代收集理论" class="headerlink" title="分代收集理论"></a>分代收集理论</h3><p>当前商业虚拟机的垃圾收集器，大多数都遵循了“分代收集”（Generational Collection） 的理论进行设计，分代收集虽然是理论，但是实质上是一套符合大多数程序实际运行情况的经验法则，它建立在两代假说的基础之上：</p>
 <ol>
@@ -306,13 +332,13 @@
 <h4 id="存活区（Survivor-spaces）"><a href="#存活区（Survivor-spaces）" class="headerlink" title="存活区（Survivor spaces）"></a>存活区（Survivor spaces）</h4><p>Eden区旁边两个就是存活区（Survivor space），成为 <code>from空间</code>和 <code>to空间</code>。需要着重强调的是任意一个时刻总有一个存活区是<code>空的（Empty）都是to空间</code>。每次的年轻代的 GC <strong>都会把from区中的存活对象和Eden区中的存活对象复制到</strong><code>to区</code>中，from和to角色切换from变成to，to变成from。</p>
 <p><img src="https://gitee.com/realDaiwei/img/raw/master/20210530235921.png" srcset="/img/loading.gif"></p>
 <p>存活的对象会在存活区中来回复制。<strong>复制一次对象存活年龄+1</strong>，按照强分代假设，存活超过一定时间的对象很可能会存活更长时间。这类对象当存活年龄超过<code>当年龄超过提升阈值(tenuring threshold)</code>，就会被<code>提升（Promotion）</code>至老年代区域。当然这个阈值参数是可以调整的，可以通过参数 <code>-XX:+MaxTenuringThreshold</code> 来指定上限。如果设置 <code>-XX:+MaxTenuringThreshold=0</code>，对象不会在存活区之间复制会直接提升到老年代。JVM 中这个阈值的默认值是<code>15个GC周期</code>，如果存活区空间不够存放对象，<code>提升（Promotion）</code>也可能更早地执行。其中<strong>存活区和Eden区的默认比例是 1 : 1 : 8 。</strong></p>
-<h4 id="老年代（Old-Gen）"><a href="#老年代（Old-Gen）" class="headerlink" title="老年代（Old Gen）"></a>老年代（Old Gen）</h4><p>老年代的GC实现要复杂得多。<strong>老年代的内存空间通常会更大**</strong>，里面的产生垃圾对象的概率也更小，老年代GC发生的**<strong>频率比年轻代小很多</strong>。同时，因为预期老年代的对象大部分都是存活的，所以不再使用标记和复制（Mark and Copy）算法。而是采用移动对象的方式来实现最小内存碎片。老年代空间的清理算法通常是建立在不同的基础上的。原则上执行以下这些步骤：</p>
+<h4 id="老年代（Old-Gen）"><a href="#老年代（Old-Gen）" class="headerlink" title="老年代（Old Gen）"></a>老年代（Old Gen）</h4><p>老年代的GC实现要复杂得多。<strong>老年代的内存空间通常会更大，里面的产生垃圾对象的概率也更小，老年代GC发生的频率比年轻代小很多</strong>。同时，因为预期老年代的对象大部分都是存活的，所以不再使用标记和复制（Mark and Copy）算法。而是采用移动对象的方式来实现最小内存碎片。老年代空间的清理算法通常是建立在不同的基础上的。原则上执行以下这些步骤：</p>
 <ul>
 <li>通过标志位（marked bit），标记所有通过 GC Roots 可达对象；</li>
 <li>删除不可达对象；</li>
 <li>整理老年代空间中的内容，方法是所有的存活对象复制，从老年代空间开始的地方依次存放。</li>
 </ul>
-<p>通过上面的描述可知，<strong>老年代GC必须明确地进行整理**</strong>，以避免内存碎片过多**。这也是<code>标记整理算法</code>。</p>
+<p>通过上面的描述可知，<strong>老年代GC必须明确地进行整理，以避免内存碎片过多</strong>。这也是<code>标记整理算法</code>。</p>
 <h4 id="永久代（Perm-Gen）"><a href="#永久代（Perm-Gen）" class="headerlink" title="永久代（Perm Gen）"></a>永久代（Perm Gen）</h4><p>在 Java8 之前有一个很特殊的空间，称为“永久代”（Permanent Generation）。这里存储数据（metadata）的地方，比如 class 信息等。此外，这个区域中也保存有其他的数据和信息。包括内部化的字符串（internalized strings）等等。实际上这块内存区域给开发这造成很多的麻烦，因为<strong>很难去计算这块区域到底需要占用多少的空间</strong>，预测失败的结果就是产生<code>java.lang.OutOfMemoryError: Permgen space</code> 这种形式的错误。除非<code>OutOfMemoryError</code> 确实是内存泄漏导致的，否则只能增加 permgen 的大小。</p>
 <figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs awk">-XX:MaxPermSize=<span class="hljs-number">256</span>m <span class="hljs-regexp">//</span>permGen 大小设置为<span class="hljs-number">256</span>m，容易发生oom<br></code></pre></td></tr></table></figure>
 
@@ -321,9 +347,9 @@
 
 <h3 id="垃圾收集算法设计与应用"><a href="#垃圾收集算法设计与应用" class="headerlink" title="垃圾收集算法设计与应用"></a>垃圾收集算法设计与应用</h3><p>前面讲了很多的东西都是铺垫，但是空中楼阁不可能腾空而起，没有绿叶又哪来鲜花。我们来一起鸟瞰全局体会垃圾回收算法在设计的精妙之处。我们通过前面的梳理，我们对堆空间进行了逻辑上的划分，分成了<code>年轻代</code>和<code>老年代</code>，而年轻代存放的都是朝生夕死的对象。老年代则存放一些不容易被清理掉生命周期长的对象。年轻代又有两个幸存区配合垃圾回收，我们已经知道了我们内存布局了。接下来我们试着进行垃圾回收。首先我们要标记出已经“死亡”的对象，通过可达性算法分析我们很清楚标记出来的就是不可达的对象。年轻代和老年代根据我们清理目标空间的需要进行标记。</p>
 <p><img src="https://gitee.com/realDaiwei/img/raw/master/20210530223844.png" srcset="/img/loading.gif"></p>
-<p>这个标记的过程中，即需要暂停所有应用线程以遍历所有对象的引用关系，因为我们无法追踪不断发生变化的引用关系。等确定这些引用关系后，应用线程又能继续执行。这个暂停的过程叫做<code>Stop The World pause（全线程暂停）</code>，简称为<code>**STW**</code>。线程也不可能在执行的过程中突然停下来，而是需要运行可以安全停下来的点，这些可以停下来的地方叫做<code>安全点（safe point）</code>，然后标记完成后 JVM 就可以安心处理垃圾了。</p>
+<p>这个标记的过程中，即需要暂停所有应用线程以遍历所有对象的引用关系，因为我们无法追踪不断发生变化的引用关系。等确定这些引用关系后，应用线程又能继续执行。这个暂停的过程叫做<code>Stop The World pause（全线程暂停）</code>，简称为<code>STW</code>。线程也不可能在执行的过程中突然停下来，而是需要运行可以安全停下来的点，这些可以停下来的地方叫做<code>安全点（safe point）</code>，然后标记完成后 JVM 就可以安心处理垃圾了。</p>
 <p>这里有一个有意思的问题：<strong>如果一个新生代的对象有且只被一个老年代的对象引用，我们在年轻代进行GC时，我们该怎么判断该对象是存活的？</strong></p>
-<p>如果我们仅仅扫描年轻代，这个对象一定是一个不可达对象，因为它被有且仅被一个老年代对象引用。难道我们进行一次年轻代GC连老年代也要扫一遍？如果扫，时间消耗太大，不扫，一定会出现这种误判的情况。那该怎么办？我们可以通过<code>找脏卡</code>的方式解决这个问题。什么是脏卡？这是 HotSpot 中一项叫卡表（card table）的技术中的一个名词。该技术<strong>将整个堆划分为一个个大小为 512 字节的卡</strong>，并且维护一个卡表，用来存储每张卡的一个标识位。这个标识位代表对应的卡<strong>是否可能存有指向新生代对象的引用</strong>。如果可能存在，那么我们就认为这张卡是<strong>脏**</strong>的<strong>。在进行年轻代GC的时候，我们便可以</strong>不用扫描整个老年代，而是在卡表中寻找脏卡<strong>，并将</strong>脏卡中的对象加入到**<strong>年轻代GC**</strong>的 GC Roots 里<strong>。当完成所有</strong>脏卡的扫描之后<strong>，Java 虚拟机便会将所有</strong>脏卡的标识位清零<strong>。由于年轻代GC伴随着存活对象的复制，而复制需要更新指向该对象的引用。因此，</strong>在更新引用的同时，我们又会设置引用所在的卡的标识位**。这个时候，我们可以确保脏卡中必定包含指向新生代对象的引用。</p>
+<p>如果我们仅仅扫描年轻代，这个对象一定是一个不可达对象，因为它被有且仅被一个老年代对象引用。难道我们进行一次年轻代GC连老年代也要扫一遍？如果扫，时间消耗太大，不扫，一定会出现这种误判的情况。那该怎么办？我们可以通过<code>找脏卡</code>的方式解决这个问题。什么是脏卡？这是 HotSpot 中一项叫卡表（card table）的技术中的一个名词。该技术<strong>将整个堆划分为一个个大小为 512 字节的卡</strong>，并且维护一个卡表，用来存储每张卡的一个标识位。这个标识位代表对应的卡<strong>是否可能存有指向新生代对象的引用</strong>。如果可能存在，那么我们就认为这张卡是<strong>脏</strong>的<strong>。在进行年轻代GC的时候，我们便可以</strong>不用扫描整个老年代，而是在卡表中寻找脏卡<strong>，并将脏卡中的对象加入到年轻代GC的 GC Roots 里</strong>。<strong>当完成所有</strong>脏卡的扫描之后<strong>，Java 虚拟机便会将所有脏卡的标识位清零</strong>。由于年轻代GC伴随着存活对象的复制，而复制需要更新指向该对象的引用。因此，<strong>在更新引用的同时，我们又会设置引用所在的卡的标识位</strong>。这个时候，我们可以确保脏卡中必定包含指向新生代对象的引用。</p>
 <blockquote>
 <p>脏卡是包含指向新生代引用的卡，年轻代GC，不扫描老年代而是寻找脏卡并加入到年轻代GC Roots中，扫描完脏卡后表示位即脏卡去脏，复制算法后存活对象地址变化，重新老年代中引用变化是同时设置脏卡标志。这个过程随着GC周期不断循环下去。</p>
 </blockquote>
@@ -334,7 +360,7 @@
 <li><strong>通过可达性算法标记出不可达对象即“死亡对象”。</strong></li>
 <li><strong>“清理”不可达对象。</strong></li>
 </ul>
-<p>这里有一个细节，这里的“清理”并不是真正的清理，而是<strong>将死亡对象的**</strong>内存空间地址记录到空闲表（free-list）上，然后直接使用这块空间进行空间分配。**</p>
+<p>这里有一个细节，这里的“清理”并不是真正的清理，而是<strong>将死亡对象的内存空间地址记录到空闲表（free-list）上，然后直接使用这块空间进行空间分配。</strong></p>
 <h4 id="清理过程中的一个小问题"><a href="#清理过程中的一个小问题" class="headerlink" title="清理过程中的一个小问题"></a>清理过程中的一个小问题</h4><p>不知道你有没有发现一个问题，这里的空间内存虽然是记录在空闲表<code>free-list</code>上，但是新来一个对象可能不一定能分配的了。因为这个空间不是连续的，来一个对象可能比空间表 free-list 上所有的空闲空间都要大，但是所有的空闲空间加在一起又完全足够让这个对象进行分配，这个问题是不是就很难受？别急还有更难受的，别忘了我们可以通过GC也就是上面这个过程释放空间，GC完成后很顺利，刚好有一个对象被释放，一段连续的内存刚好够放下这个对象。我们放松一口气。这时又来了一个对象，这个对象和上一个对象遇到了同样的问题，这是我们该怎么办？GC？这时刚GC完成，应该是没有空间可以释放的，报OOM让程序员小哥哥解决？明明我们还有空间啊，只不过都是不连续的碎片空间。我们在这个场景中遇到的小问题就是<strong>因为标记清除算法在清除完毕后不对空间进行整理，导致GC之后产生很多的不连续的碎片空间，这些碎片空间无法进行空间分配从而导致OOM的发生。</strong>我们该怎么解决这个办法呢？</p>
 <h4 id="标记-清除-整理算法（Mark-Sweep-Compact）"><a href="#标记-清除-整理算法（Mark-Sweep-Compact）" class="headerlink" title="标记-清除-整理算法（Mark-Sweep-Compact）"></a>标记-清除-整理算法（Mark-Sweep-Compact）</h4><p>面对上面的问题其实最简单的办法就是在清理完成后我们整理下内存空间，把还存活的对象再次排好。有了整理部分的加入后上面的过程变成下面这样：</p>
 <p><img src="https://gitee.com/realDaiwei/img/raw/master/20210531235410.png" srcset="/img/loading.gif"></p>
@@ -344,8 +370,8 @@
 <li><strong>“清理”不可达对象。</strong></li>
 <li><strong>整理压缩对象空间。</strong></li>
 </ul>
-<p>这个方案很完美，因为这个相较于标记-清理算法多了一步，这一步虽然压缩了对象，空闲空间也变成<strong>连续的空间提升了空间的利用率</strong>。但是多这一步的操作也为<strong>增加了**</strong>每次GC复杂度<strong>增加每次的GC耗时。而老年代对象基本上都是存活对象且空间更大，发生GC的概率更低，因此</strong>压缩算法更多的用在了老年代。**</p>
-<h4 id="复制算法（Copying）"><a href="#复制算法（Copying）" class="headerlink" title="复制算法（Copying）"></a>复制算法（Copying）</h4><p>上面的压缩算法的弊端是整理空间增加了GC的时间复杂度，有没有优化的方案呢？有的，在算法中我们经常会使用空间换时间的思想增加程序的空间复杂度来降低时间复杂度。这里我们可以直接<strong>将所有的存活对象复制另外一个内存空间中，原本的内存空间直接清空**</strong>。**复制过去的对象内存空间是连续的，我们还可以在新空出来的空间分配对象，这个复制过去的目标空间就是我们前面提到的<code>存活区（Survivor space）</code>，这个GC算法也就是我们前面提到的<code>标记复制算法</code>（Mark and Copy）</p>
+<p>这个方案很完美，因为这个相较于标记-清理算法多了一步，这一步虽然压缩了对象，空闲空间也变成<strong>连续的空间提升了空间的利用率</strong>。但是多这一步的操作也为<strong>增加了</strong>每次GC复杂度<strong>增加每次的GC耗时。而老年代对象基本上都是存活对象且空间更大，发生GC的概率更低</strong>，因此<strong>压缩算法更多的用在了老年代。</strong></p>
+<h4 id="复制算法（Copying）"><a href="#复制算法（Copying）" class="headerlink" title="复制算法（Copying）"></a>复制算法（Copying）</h4><p>上面的压缩算法的弊端是整理空间增加了GC的时间复杂度，有没有优化的方案呢？有的，在算法中我们经常会使用空间换时间的思想增加程序的空间复杂度来降低时间复杂度。这里我们可以直接<strong>将所有的存活对象复制另外一个内存空间中，原本的内存空间直接清空</strong>。复制过去的对象内存空间是连续的，我们还可以在新空出来的空间分配对象，这个复制过去的目标空间就是我们前面提到的<code>存活区（Survivor space）</code>，这个GC算法也就是我们前面提到的<code>标记复制算法</code>（Mark and Copy）</p>
 <p><img src="https://gitee.com/realDaiwei/img/raw/master/20210530235921.png" srcset="/img/loading.gif"></p>
 <p>在实际使用中配合新生代Eden区和来回复制的两个Survivor存活区，实现高效的复制算法。因此复制算法分为以下三步：</p>
 <ul>
@@ -402,6 +428,12 @@
                 <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
+                    
+                      <a href="/2021/06/11/garbage-collector-1/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">JVM GC篇 — 垃圾收集器（上）</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
                     
                   </article>
                   <article class="post-next col-6">
