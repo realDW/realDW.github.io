@@ -293,7 +293,7 @@
 <p>A：B，你好你好。🙈</p>
 <p>双方确认对方都在听自己说话之后，两个人就可以开始愉快的沟通了。这个过程我们也常称为“请求 -&gt; 应答 -&gt; 应答之应答”。把这个逻辑翻译成计算机中建立网络的语言就是下面这个过程：</p>
 <p><img src="https://gitee.com/realDaiwei/img/raw/master/20210821175756.png" srcset="/img/loading.gif"></p>
-<p>一开始，客户端和服务端都处于<code>CLOSED</code>状态。先是服务端主动监听某个端口，处于<code>LISTEN</code>状态。然后客户端主动发起连接<code>SYN</code>，之后处于<code>SYN-SENT</code>状态，服务端收到发起的连接，返回<code>SYN</code>，并且<code>ACK</code>客户端的<code>SYN</code>，之后处于<code>SYN-RCVD</code>状态。客户端收到服务端发送的<code>SYN</code>和``之后，发送<code>ACK</code>的<code>ACK</code>，之后处于<code>ESTABLISHED</code>状态，因为客户端已经一发一收成功了。服务端收到<code>ACK</code>的<code>ACK</code>之后，处于<code>ESTABLISHED</code>状态，此时服务端也一发一收成功了。在后续的的连接中如果连接空着也没关系，我们在程序中可以开启keepalive，即时没有数据传输，双方也会发送探活空包来保持通信。</p>
+<p>一开始，客户端和服务端都处于<code>CLOSED</code>状态。先是服务端主动监听某个端口，处于<code>LISTEN</code>状态。然后客户端主动发起连接<code>SYN</code>，之后处于<code>SYN-SENT</code>状态，服务端收到发起的连接，返回<code>SYN</code>，并且<code>ACK</code>客户端的<code>SYN</code>，之后处于<code>SYN-RCVD</code>状态。客户端收到服务端发送的<code>SYN</code>和<code>ACK</code>之后，发送ACK<code>的</code>ACK<code>，之后处于</code>ESTABLISHED<code>状态，因为客户端已经一发一收成功了。服务端收到</code>ACK<code>的</code>ACK<code>之后，处于</code>ESTABLISHED`状态，此时服务端也一发一收成功了。在后续的的连接中如果连接空着也没关系，我们在程序中可以开启keepalive，即时没有数据传输，双方也会发送探活空包来保持通信。</p>
 <blockquote>
 <p>这里有一个细节，TCP通过将每个数据包生成一个递增的序号，来解决因为网络通路延迟带来的数据包到达的顺序问题，<strong>接收端只要收到包后按照这个序号进行排序，即可得到数据包正确的顺序</strong>。</p>
 <p>每个数据包都需要返回一个ACK包给接收端，来确认某个数据包已经到达，ACK响应也会带一个响应序号这个序号为<strong>确认包序号+数据包长度+1</strong>，如果发送端在一段时间内没有收到接收方响应的ACK包，发送方就会重新发送一个。<strong>因此通过序号和ACK号，可以确认接收方是否收到了网络包。</strong></p>
