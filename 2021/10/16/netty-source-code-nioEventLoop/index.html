@@ -1,0 +1,586 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/blogFavicon.png">
+  <link rel="icon" href="/img/blogFavicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  
+    <meta name="description" content="">
+  
+  <meta name="author" content="Daiwei">
+  <meta name="keywords" content="">
+  
+  <title>核心组件源码剖析 — NioEventLoop - Daiwei‘s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.4.0/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.8.8","typing":{"enable":true,"typeSpeed":100,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"onlypost":false},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Daiwei's blog</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" href="javascript:">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner" id="banner" parallax=true
+         style="background: url('https://gitee.com/realDaiwei/img/raw/master/dawson-mccormick-gN0u1Vswhkk-unsplash.jpg') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="核心组件源码剖析 — NioEventLoop">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-10-16 22:22" pubdate>
+        2021年10月16日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      7.3k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      35
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">核心组件源码剖析 — NioEventLoop</h1>
+            
+            <div class="markdown-body">
+              <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>从这一小节我们开始深入源码学习，我们的源码分析会围绕着《Netty源码剖析与应用》这本书来学习，并且结合自己分析看源码，毕竟只有自己看到才是真的。这一小节我们要分析梳理核心组件NioEventLoop的源码，从源码角度看看NioEventLoop到底做了哪些事。第一次深入的研究源码学习，源码看得的确挺头大的，但是通过源码角度对Netty又有了一个全新的认知收获很多，那我们就一起来分析以下NioEventLoop吧。</p>
+<blockquote>
+<p>我们分析解读的Netty版本为 <strong>4.1.68.Final</strong></p>
+</blockquote>
+<h1 id="NioEventLoopGroup-源码分析"><a href="#NioEventLoopGroup-源码分析" class="headerlink" title="NioEventLoopGroup 源码分析"></a>NioEventLoopGroup 源码分析</h1><p>我们既然是分析NioEventLoop，那自然是离不开NioEventLoopGroup的分析，我们前面提到了NioEventLoop用于处理Channel的I/O操作，而NioEventLoopGroup则是这样一个操作的集合。<strong>一个NioEventLoopGroup里面包含一个或多个NioEventLoop。</strong>在前面的Demo中，我们还创建了辅助启动类ServerBootStrap。它也包括了两个NioEventLoopGroup，用于构建主从Reactor结构。</p>
+<p><strong>NioEventLoopGroup类主要完成了下面的3件事：</strong></p>
+<ol>
+<li><p><strong>创建一定数量的NioEventLoop线程组并完成初始化。</strong></p>
+</li>
+<li><p><strong>创建线程选择器，当获取线程时候，通过选择器来选取线程。</strong></p>
+</li>
+<li><p><strong>创建线程工厂并构造线程执行器。</strong></p>
+</li>
+</ol>
+<h2 id="创建过程分析"><a href="#创建过程分析" class="headerlink" title="创建过程分析"></a>创建过程分析</h2><p>NioEventLoopGroup的父类为<code>MultithreadEventLoopGroup</code>，父类继承了抽象类<code>MultithreadEventExecutorGroup</code>。在初始化NioEventLoopGroup时，会调用其父类的构造方法。其中<code>DEFAULT_EVENT_LOOP_GROUP</code>会决定生成多少NioEventLoop线程，默认值是CPU核数的两倍，同时这个值会先从系统配置中读取。在构造方法会传入这个参数，如果这个参数不传使用默认构造器构造线程数，否则按照传递的参数构造线程数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DEFAULT_EVENT_LOOP_THREADS;<br><br><span class="hljs-keyword">static</span> &#123;<br>    DEFAULT_EVENT_LOOP_THREADS = Math.max(<span class="hljs-number">1</span>, SystemPropertyUtil.getInt(<br>        <span class="hljs-string">&quot;io.netty.eventLoopThreads&quot;</span>, NettyRuntime.availableProcessors() * <span class="hljs-number">2</span>));<br><br>    <span class="hljs-keyword">if</span> (logger.isDebugEnabled()) &#123;<br>        logger.debug(<span class="hljs-string">&quot;-Dio.netty.eventLoopThreads: &#123;&#125;&quot;</span>, DEFAULT_EVENT_LOOP_THREADS);<br>    &#125;<br>&#125;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@see</span> MultithreadEventExecutorGroup#MultithreadEventExecutorGroup(int, Executor, Object...)</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-title">MultithreadEventLoopGroup</span><span class="hljs-params">(<span class="hljs-keyword">int</span> nThreads, Executor executor, Object... args)</span> </span>&#123;<br>    <span class="hljs-keyword">super</span>(nThreads == <span class="hljs-number">0</span> ? DEFAULT_EVENT_LOOP_THREADS : nThreads, executor, args);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>线程组的生产分两步：第一步，创建一定数量的 EventExecutor 数组；第二步，通过调用子类的<code>newChild()</code>方法完成这些 EventExecutor数组的初始。为了提高可拓展性，Netty的线程组除了NioEventLoopGroup，还有Netty通过JNI方式提供的一套由epoll模型实现的EpollEventLoopGroup 线程组，以及其他I/O多路复用模型线程组，因此<code>newChild()</code>方法由具体的线程组子类来实现。<code>MultithreadEventExecutorGroup</code>的构造方法和<code>newChild()</code>方法的解读如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * Create a new instance.</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> nThreads          the number of threads that will be used by this instance.</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> executor          the Executor to use, or &#123;<span class="hljs-doctag">@code</span> null&#125; if the default should be used.</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> chooserFactory    the &#123;<span class="hljs-doctag">@link</span> EventExecutorChooserFactory&#125; to use.</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> args              arguments which will passed to each &#123;<span class="hljs-doctag">@link</span> #newChild(Executor, Object...)&#125; call</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-title">MultithreadEventExecutorGroup</span><span class="hljs-params">(<span class="hljs-keyword">int</span> nThreads, Executor executor,</span></span><br><span class="hljs-function"><span class="hljs-params">                                        EventExecutorChooserFactory chooserFactory, Object... args)</span> </span>&#123;<br>    checkPositive(nThreads, <span class="hljs-string">&quot;nThreads&quot;</span>);<br><br>    <span class="hljs-keyword">if</span> (executor == <span class="hljs-keyword">null</span>) &#123;<br>        <span class="hljs-comment">//创建线程执行器及线程工厂</span><br>        executor = <span class="hljs-keyword">new</span> ThreadPerTaskExecutor(newDefaultThreadFactory());<br>    &#125;<br><br>    <span class="hljs-comment">//根据线程数构建 EventExecutor 数组</span><br>    children = <span class="hljs-keyword">new</span> EventExecutor[nThreads];<br><br>    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; nThreads; i ++) &#123;<br>        <span class="hljs-keyword">boolean</span> success = <span class="hljs-keyword">false</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//初始化线程组中的线程，由NioEventLoopGroup创建NioEventLoop类实例</span><br>            children[i] = newChild(executor, args);<br>            success = <span class="hljs-keyword">true</span>;<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            <span class="hljs-comment">// <span class="hljs-doctag">TODO:</span> Think about if this is a good exception type</span><br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalStateException(<span class="hljs-string">&quot;failed to create a child event loop&quot;</span>, e);<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            <span class="hljs-comment">// 初始化失败，需要优雅关闭，清理资源</span><br>            <span class="hljs-keyword">if</span> (!success) &#123;<br>                <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> j = <span class="hljs-number">0</span>; j &lt; i; j ++) &#123;<br>                    children[j].shutdownGracefully();<br>                &#125;<br><br>                <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> j = <span class="hljs-number">0</span>; j &lt; i; j ++) &#123;<br>                    EventExecutor e = children[j];<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        <span class="hljs-comment">//当线程没有中止，等待中止。</span><br>                        <span class="hljs-keyword">while</span> (!e.isTerminated()) &#123;<br>                            e.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);<br>                        &#125;<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException interrupted) &#123;<br>                        <span class="hljs-comment">// Let the caller handle the interruption.</span><br>                        Thread.currentThread().interrupt();<br>                        <span class="hljs-keyword">break</span>;<br>                    &#125;<br>                &#125;<br>            &#125;<br>        &#125;<br>    &#125;<br>	<span class="hljs-comment">//根据创建出来的EventLoop实例创建线程选择器</span><br>    chooser = chooserFactory.newChooser(children);<br><br>    <span class="hljs-keyword">final</span> FutureListener&lt;Object&gt; terminationListener = <span class="hljs-keyword">new</span> FutureListener&lt;Object&gt;() &#123;<br>        <span class="hljs-meta">@Override</span><br>        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">operationComplete</span><span class="hljs-params">(Future&lt;Object&gt; future)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>            <span class="hljs-keyword">if</span> (terminatedChildren.incrementAndGet() == children.length) &#123;<br>                terminationFuture.setSuccess(<span class="hljs-keyword">null</span>);<br>            &#125;<br>        &#125;<br>    &#125;;<br><br>    <span class="hljs-comment">//为每个EventLoop添加线程终止监听器</span><br>    <span class="hljs-keyword">for</span> (EventExecutor e: children) &#123;<br>        e.terminationFuture().addListener(terminationListener);<br>    &#125;<br><br>    Set&lt;EventExecutor&gt; childrenSet = <span class="hljs-keyword">new</span> LinkedHashSet&lt;EventExecutor&gt;(children.length);<br>    Collections.addAll(childrenSet, children);<br>    <span class="hljs-comment">//创建只读副本，在迭代查询时使用</span><br>    readonlyChildren = Collections.unmodifiableSet(childrenSet);<br>&#125;<br><br><span class="hljs-meta">@Override</span><br><span class="hljs-function"><span class="hljs-keyword">protected</span> EventLoop <span class="hljs-title">newChild</span><span class="hljs-params">(Executor executor, Object... args)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>    SelectorProvider selectorProvider = (SelectorProvider) args[<span class="hljs-number">0</span>];<br>    SelectStrategyFactory selectStrategyFactory = (SelectStrategyFactory) args[<span class="hljs-number">1</span>];<br>    RejectedExecutionHandler rejectedExecutionHandler = (RejectedExecutionHandler) args[<span class="hljs-number">2</span>];<br>    EventLoopTaskQueueFactory taskQueueFactory = <span class="hljs-keyword">null</span>;<br>    EventLoopTaskQueueFactory tailTaskQueueFactory = <span class="hljs-keyword">null</span>;<br><br>    <span class="hljs-keyword">int</span> argsLength = args.length;<br>    <span class="hljs-keyword">if</span> (argsLength &gt; <span class="hljs-number">3</span>) &#123;<br>        taskQueueFactory = (EventLoopTaskQueueFactory) args[<span class="hljs-number">3</span>];<br>    &#125;<br>    <span class="hljs-keyword">if</span> (argsLength &gt; <span class="hljs-number">4</span>) &#123;<br>        tailTaskQueueFactory = (EventLoopTaskQueueFactory) args[<span class="hljs-number">4</span>];<br>    &#125;<br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> NioEventLoop(<span class="hljs-keyword">this</span>, executor, selectorProvider,<br>                            selectStrategyFactory.newSelectStrategy(),<br>                            rejectedExecutionHandler, taskQueueFactory, tailTaskQueueFactory);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在newChild()方法中，NioEventLoop的初始化参数有7个：</p>
+<ul>
+<li><p>第1个参数为NioEventLoopGroup线程组本身。</p>
+</li>
+<li><p>第2个参数为线程执行器，用于启动线程，在SingleThreadEventExecutor的<code>doStartThread()</code>方法中被调用。</p>
+</li>
+<li><p>第3个参数为NIO的Selector选择器的提供者。</p>
+</li>
+<li><p>第4个参数主要在NioEventLoop的run()方法中用于控制选择循环。</p>
+</li>
+<li><p>第5个参数为非I/O任务提交被拒时的处理Handler。</p>
+</li>
+<li><p>第6个和第7个参数是两个队列工厂分别是<code>taskQueue</code>和<code>tailTaskQueue</code>。</p>
+</li>
+</ul>
+<h2 id="ExecutorChooser-分析"><a href="#ExecutorChooser-分析" class="headerlink" title="ExecutorChooser 分析"></a>ExecutorChooser 分析</h2><p>NioEventLoopGroup通过<code>next()</code>方法获取NioEventLoop线程，最终会调用其父<code>MultithreadEventLoopGroup</code>的<code>next()</code>方法，委托父类构造EventExecutorChooser。具体使用哪些对象取决于<code>MultithreadEventLoopGroup</code>的构造方法中使用的策略模式。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Override</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> EventLoop <span class="hljs-title">next</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-keyword">return</span> (EventLoop) <span class="hljs-keyword">super</span>.next();<br>&#125;<br><br><span class="hljs-meta">@Override</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> EventExecutor <span class="hljs-title">next</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-keyword">return</span> chooser.next();<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>初始化过程中，通过<code>newChooser()</code>来创建选择器，根据线程数是否为2的幂次来选择策略，如果是，选择<code>PowerOfTwoEventExecutorChooser</code>其使用<strong>与运算</strong>计算下一个选择器，否则选择<code>GenericEventExecutorChooser</code>其选择策略是通过<strong>取余方式</strong>来计算出下一个选择器。其中<code>PowerOfTwoEventExecutorChooser</code><strong>有着更好的性能</strong>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java">chooser = chooserFactory.newChooser(children);<br><br><span class="hljs-meta">@Override</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> EventExecutorChooser <span class="hljs-title">newChooser</span><span class="hljs-params">(EventExecutor[] executors)</span> </span>&#123;<br>    <span class="hljs-keyword">if</span> (isPowerOfTwo(executors.length)) &#123;<br>        <span class="hljs-comment">//与运算方法计算下一个executor</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> PowerOfTwoEventExecutorChooser(executors);<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-comment">//取余方式计算下一个executor</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> GenericEventExecutorChooser(executors);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="ThreadFactory源码分析"><a href="#ThreadFactory源码分析" class="headerlink" title="ThreadFactory源码分析"></a>ThreadFactory源码分析</h2><p>Netty的NioEventLoop线程被包装成了FastThreadLocalThread线程，同时，NioEventLoop线程的状态由它自身管理，因此每个NioEventLoop线程都需要一个线程执行器，并且在线程执行前需要通过<code>io.netty.util.concurrent.DefaultThreadFactory</code>将其包装成<code>FastThreadLocalThread</code>线程。执行器<code>ThreadPerTaskExecutor</code>与<code>DefaultThreadFactory</code>的<code>newThread()</code> 方法源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//io.netty.util.concurrent.MultithreadEventExecutorGroup#newDefaultThreadFactory</span><br><span class="hljs-function"><span class="hljs-keyword">protected</span> ThreadFactory <span class="hljs-title">newDefaultThreadFactory</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> DefaultThreadFactory(getClass());<br>&#125;<br><br><span class="hljs-comment">//io.netty.util.concurrent.ThreadPerTaskExecutor#execute</span><br><span class="hljs-meta">@Override</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">execute</span><span class="hljs-params">(Runnable command)</span> </span>&#123;<br>    <span class="hljs-comment">//调用ThreadFactory的newThread()方法包装并启动线程。</span><br>    threadFactory.newThread(command).start();<br>&#125;<br><br><span class="hljs-comment">//io.netty.util.concurrent.DefaultThreadFactory#newThread(java.lang.Runnable)</span><br><span class="hljs-meta">@Override</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> Thread <span class="hljs-title">newThread</span><span class="hljs-params">(Runnable r)</span> </span>&#123;<br>    Thread t = newThread(FastThreadLocalRunnable.wrap(r), prefix + nextId.incrementAndGet());<br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-keyword">if</span> (t.isDaemon() != daemon) &#123;<br>            t.setDaemon(daemon);<br>        &#125;<br><br>        <span class="hljs-keyword">if</span> (t.getPriority() != priority) &#123;<br>            t.setPriority(priority);<br>        &#125;<br>    &#125; <span class="hljs-keyword">catch</span> (Exception ignored) &#123;<br>        <span class="hljs-comment">// Doesn&#x27;t matter even if failed to set.</span><br>    &#125;<br>    <span class="hljs-keyword">return</span> t;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h1 id="NioEventLoop源码分析"><a href="#NioEventLoop源码分析" class="headerlink" title="NioEventLoop源码分析"></a>NioEventLoop源码分析</h1><p>NioEventLoop源码相比于NioEventLoopGroup源码就复杂多了，每个NioEventLoop对象都与NIO中的多路复用 Selector 一样，要管理成千上万条链路，所有链路数据的读/写事件都有它发起。NioEventLoop有以下5个核心功能：</p>
+<ol>
+<li><p><strong>开启 Selector 并初始化</strong>。</p>
+</li>
+<li><p><strong>把 ServerSocketChannel 注册到 Selector 上</strong>。</p>
+</li>
+<li><p><strong>处理各种I/O事件，例如OP_ACCEPT、OP_CONNECT、OP_READ、OP_WRITE事件。</strong></p>
+</li>
+<li><p><strong>执行定时调度任务。</strong></p>
+</li>
+<li><p><strong>解决JDK NIO空轮询的bug。</strong></p>
+</li>
+</ol>
+<p>NioEventLoop这些功能的具体实现大部分都是委托其他类来完成的，其本身只完成数据流的接入工作。这样的设计减轻了NioEventLoop的负担，同时增强了其拓展性。NioEventLoop的整体功能如下图：</p>
+<p><img src="https://gitee.com/realDaiwei/img/raw/master/20211013074420.png" srcset="/img/loading.gif"></p>
+<p>其中上图中，第二层为NioEventLoop的4个核心方法。对于每条EventLoop线程来说，由于链路注册到Selector上的具体实现都是委托给Unsafe方法来完成，因此<code>register()</code>方法存在其父类SingleThreadEventLoop中。</p>
+<h2 id="开启-Selector"><a href="#开启-Selector" class="headerlink" title="开启 Selector"></a>开启 Selector</h2><p>在初始化NioEventLoop时，通过openSelector()方法开启Selector。在rebuildSelector() 方法中也可以调用openSelector()方法。</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs kotlin"><span class="hljs-comment">//io.netty.channel.nio.NioEventLoop#NioEventLoop    </span><br>NioEventLoop(NioEventLoopGroup parent, Executor executor, SelectorProvider selectorProvider,<br>             SelectStrategy strategy, RejectedExecutionHandler rejectedExecutionHandler,<br>             EventLoopTaskQueueFactory taskQueueFactory, EventLoopTaskQueueFactory tailTaskQueueFactory) &#123;<br>    <span class="hljs-keyword">super</span>(parent, executor, <span class="hljs-literal">false</span>, newTaskQueue(taskQueueFactory), newTaskQueue(tailTaskQueueFactory),<br>          rejectedExecutionHandler);<br>    <span class="hljs-keyword">this</span>.provider = ObjectUtil.checkNotNull(selectorProvider, <span class="hljs-string">&quot;selectorProvider&quot;</span>);<br>    <span class="hljs-keyword">this</span>.selectStrategy = ObjectUtil.checkNotNull(strategy, <span class="hljs-string">&quot;selectStrategy&quot;</span>);<br>    <span class="hljs-comment">// 开启Selector</span><br>    <span class="hljs-keyword">final</span> SelectorTuple selectorTuple = openSelector();<br>    <span class="hljs-keyword">this</span>.selector = selectorTuple.selector;<br>    <span class="hljs-keyword">this</span>.unwrappedSelector = selectorTuple.unwrappedSelector;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在NIO中开启Selector，只需要调用<code>Selector.open()</code>或<code>SelectorProvider</code>的<code>openSelector()</code>方法即可。Netty为Selector设置了优化开关，如果开启优化开关，则通过反射加载<code>sun.nio.ch.SelectorImpl</code>对象，并通过已经优化过的<code>SelectorSelectionKeySet</code>替换<code>sun.nio.ch.SelectorImpl</code>对象中的<code>selectedKeys</code>和<code>publicSelectedKeys</code>两个HashSet集合。其中，<strong>selectedKeys为就绪Key的集合，拥有所有操作事件准备就绪的选择Key；publicSelectedKeys为外部访问就绪Key的集合代理，由selectedKeys集合包装成不可修改的集合。</strong></p>
+<p>SelectedSelectionKeySet具体做了哪些优化呢？</p>
+<p>主要是改变了数据结构，用数组代替了HashSet，重写了<code>add()</code>和<code>iterator()</code>方法，使数组的遍历效率更高，开启优化开关，需要将系统属性<code>io.netty.noKeySetOptimization</code>设置为true。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//io.netty.channel.nio.NioEventLoop#openSelector</span><br><span class="hljs-function"><span class="hljs-keyword">private</span> SelectorTuple <span class="hljs-title">openSelector</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-keyword">final</span> Selector unwrappedSelector;<br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// 开启Selector</span><br>        unwrappedSelector = provider.openSelector();<br>    &#125; <span class="hljs-keyword">catch</span> (IOException e) &#123;<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> ChannelException(<span class="hljs-string">&quot;failed to open a new selector&quot;</span>, e);<br>    &#125;<br>	<span class="hljs-comment">// 是否开启优化，如果未开启优化直接返回Selector元组</span><br>    <span class="hljs-keyword">if</span> (DISABLE_KEY_SET_OPTIMIZATION) &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SelectorTuple(unwrappedSelector);<br>    &#125;<br><br>    <span class="hljs-comment">// 开启优化通过反射加载sun.nio.ch.SelectorImpl</span><br>    Object maybeSelectorImplClass = AccessController.doPrivileged(<span class="hljs-keyword">new</span> PrivilegedAction&lt;Object&gt;() &#123;<br>        <span class="hljs-meta">@Override</span><br>        <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>                <span class="hljs-keyword">return</span> Class.forName(<br>                    <span class="hljs-string">&quot;sun.nio.ch.SelectorImpl&quot;</span>,<br>                    <span class="hljs-keyword">false</span>,<br>                    PlatformDependent.getSystemClassLoader());<br>            &#125; <span class="hljs-keyword">catch</span> (Throwable cause) &#123;<br>                <span class="hljs-keyword">return</span> cause;<br>            &#125;<br>        &#125;<br>    &#125;);<br>	<br>    <span class="hljs-keyword">if</span> (!(maybeSelectorImplClass <span class="hljs-keyword">instanceof</span> Class) ||<br>        <span class="hljs-comment">// ensure the current selector implementation is what we can instrument.</span><br>        !((Class&lt;?&gt;) maybeSelectorImplClass).isAssignableFrom(unwrappedSelector.getClass())) &#123;<br>        <span class="hljs-keyword">if</span> (maybeSelectorImplClass <span class="hljs-keyword">instanceof</span> Throwable) &#123;<br>            Throwable t = (Throwable) maybeSelectorImplClass;<br>            logger.trace(<span class="hljs-string">&quot;failed to instrument a special java.util.Set into: &#123;&#125;&quot;</span>, unwrappedSelector, t);<br>        &#125;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SelectorTuple(unwrappedSelector);<br>    &#125;<br>    <br>	<span class="hljs-comment">//使用SelectedSelectionKeySet替换Selector中的selectedKey和publicSelectKeys</span><br>    <span class="hljs-keyword">final</span> Class&lt;?&gt; selectorImplClass = (Class&lt;?&gt;) maybeSelectorImplClass;<br>    <span class="hljs-keyword">final</span> SelectedSelectionKeySet selectedKeySet = <span class="hljs-keyword">new</span> SelectedSelectionKeySet();<br><br>    Object maybeException = AccessController.doPrivileged(<span class="hljs-keyword">new</span> PrivilegedAction&lt;Object&gt;() &#123;<br>        <span class="hljs-meta">@Override</span><br>        <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>                Field selectedKeysField = selectorImplClass.getDeclaredField(<span class="hljs-string">&quot;selectedKeys&quot;</span>);<br>                Field publicSelectedKeysField = selectorImplClass.getDeclaredField(<span class="hljs-string">&quot;publicSelectedKeys&quot;</span>);<br><br>                <span class="hljs-comment">//&gt;=jdk9 unsafe replace</span><br>                <span class="hljs-keyword">if</span> (PlatformDependent.javaVersion() &gt;= <span class="hljs-number">9</span> &amp;&amp; PlatformDependent.hasUnsafe()) &#123;<br>                    <span class="hljs-comment">// Let us try to use sun.misc.Unsafe to replace the SelectionKeySet.</span><br>                    <span class="hljs-comment">// This allows us to also do this in Java9+ without any extra flags.</span><br>                    <span class="hljs-keyword">long</span> selectedKeysFieldOffset = PlatformDependent.objectFieldOffset(selectedKeysField);<br>                    <span class="hljs-keyword">long</span> publicSelectedKeysFieldOffset =<br>                        PlatformDependent.objectFieldOffset(publicSelectedKeysField);<br><br>                    <span class="hljs-keyword">if</span> (selectedKeysFieldOffset != -<span class="hljs-number">1</span> &amp;&amp; publicSelectedKeysFieldOffset != -<span class="hljs-number">1</span>) &#123;<br>                        PlatformDependent.putObject(<br>                            unwrappedSelector, selectedKeysFieldOffset, selectedKeySet);<br>                        PlatformDependent.putObject(<br>                            unwrappedSelector, publicSelectedKeysFieldOffset, selectedKeySet);<br>                        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;<br>                    &#125;<br>                    <span class="hljs-comment">// We could not retrieve the offset, lets try reflection as last-resort.</span><br>                &#125;<br>                <br>				<span class="hljs-comment">//&lt;jdk9 relection replace</span><br>                Throwable cause = ReflectionUtil.trySetAccessible(selectedKeysField, <span class="hljs-keyword">true</span>);<br>                <span class="hljs-keyword">if</span> (cause != <span class="hljs-keyword">null</span>) &#123;<br>                    <span class="hljs-keyword">return</span> cause;<br>                &#125;<br>                cause = ReflectionUtil.trySetAccessible(publicSelectedKeysField, <span class="hljs-keyword">true</span>);<br>                <span class="hljs-keyword">if</span> (cause != <span class="hljs-keyword">null</span>) &#123;<br>                    <span class="hljs-keyword">return</span> cause;<br>                &#125;<br><br>                selectedKeysField.set(unwrappedSelector, selectedKeySet);<br>                publicSelectedKeysField.set(unwrappedSelector, selectedKeySet);<br>                <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;<br>            &#125; <span class="hljs-keyword">catch</span> (NoSuchFieldException e) &#123;<br>                <span class="hljs-keyword">return</span> e;<br>            &#125; <span class="hljs-keyword">catch</span> (IllegalAccessException e) &#123;<br>                <span class="hljs-keyword">return</span> e;<br>            &#125;<br>        &#125;<br>    &#125;);<br><br>    <span class="hljs-keyword">if</span> (maybeException <span class="hljs-keyword">instanceof</span> Exception) &#123;<br>        selectedKeys = <span class="hljs-keyword">null</span>;<br>        Exception e = (Exception) maybeException;<br>        logger.trace(<span class="hljs-string">&quot;failed to instrument a special java.util.Set into: &#123;&#125;&quot;</span>, unwrappedSelector, e);<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SelectorTuple(unwrappedSelector);<br>    &#125;<br>    <span class="hljs-comment">// 把selectedKeySet赋给 NioEventLoop的属性，并返回selector元组</span><br>    selectedKeys = selectedKeySet;<br>    logger.trace(<span class="hljs-string">&quot;instrumented a special java.util.Set into: &#123;&#125;&quot;</span>, unwrappedSelector);<br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SelectorTuple(unwrappedSelector,<br>                             <span class="hljs-keyword">new</span> SelectedSelectionKeySetSelector(unwrappedSelector, selectedKeySet));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>关于AccessController.doPrivileged</p>
+<p>来自不同为止的代码可以有一个<code>CodeSource</code>对象描述其位置和签名证书。根据代码的<code>CodeSource</code>的不同，代码拥有不同的权限。例如所有Java SDK自带的代码都具有所有的权限，而<code>Applet</code>中的代码则具有非常受限的权限，用户便携的代码可以自己定制权限（通过<code>SecurityMananger</code>）。当执行一段代码时，这段代码的StackTrace包含了从<code>Main</code>开始所有正在被调用而且没有结束的方法。在这个调用过程中，很有可能出现跨多个不同的<code>CodeSource</code>的调用序列。由于<code>CodeSource</code>不同，这些代码通常拥有不同的权限集。<strong>只有所有途径</strong><code>CodeSource</code><strong>都具有对应的权限集合时，当前正在运行的代码才能存取某个</strong><code>Resource</code>。<strong>而</strong><code>doPrivileged</code><strong>方法是对这个规则的一种补充</strong>。他类似于<code>Unix</code>中的<code>setuid</code>程序。<code>Unix</code>中的<code>login</code>程序具有<code>setuid</code>位，它不管被哪个用户调用，都具有<code>root</code>权限。<strong>调用</strong><code>doPrivileged</code><strong>的方法不管其</strong><code>StackTrace</code><strong>中其他方法的权限，而仅仅根据当前方法的权限来判断用户是否能访问某个</strong><code>resource</code>。也即可以规定用户只能用某种预定的方式来访问其本来不能访问的<code>resource</code>。<strong>使用</strong><code>doPrivileged</code><strong>方法和使用</strong><code>setuid</code><strong>位都需要注意的地方，例如仅仅执行必要的操作。否则，可能会带来安全上的问题。</strong></p>
+<p>关于<code>setuid</code></p>
+<p><code>setuid</code>是类unix系统提供的一个标志位，<strong>其实际意义是set一个process的euid为这个可执行文件或程序的拥有者（比如root）的uid，也就是当setuid位被设置之后，当文件或程序（统称为executable）被执行时，操作系统会赋予文件所有者的权限，因为其euid是文件所有者的uid。</strong></p>
+</blockquote>
+<h2 id="run-方法解读"><a href="#run-方法解读" class="headerlink" title="run() 方法解读"></a>run() 方法解读</h2><p><code>run()</code>方法是EventLoop的核心方法，EventLoop循环阻塞在这个方法对Channel进行监听并完成后续的各种操作，例如处理轮询到的SelectionKey，执行队列任务等。这个部分的代码解读如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//io.netty.channel.nio.NioEventLoop#run</span><br><span class="hljs-meta">@Override</span><br><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-keyword">int</span> selectCnt = <span class="hljs-number">0</span>;<br>    <span class="hljs-keyword">for</span> (;;) &#123;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-keyword">int</span> strategy;<br>            <span class="hljs-keyword">try</span> &#123;<br>                <span class="hljs-comment">// 计算当前的选择策略，CONTINUE、BUSY_WAIT、SELECT</span><br>                strategy = selectStrategy.calculateStrategy(selectNowSupplier, hasTasks());<br>                <span class="hljs-keyword">switch</span> (strategy) &#123;<br>                    <span class="hljs-keyword">case</span> SelectStrategy.CONTINUE:<br>                        <span class="hljs-keyword">continue</span>;<br><br>                    <span class="hljs-keyword">case</span> SelectStrategy.BUSY_WAIT:<br>                        <span class="hljs-comment">// fall-through to SELECT since the busy-wait is not supported with NIO</span><br><br>                    <span class="hljs-keyword">case</span> SelectStrategy.SELECT:<br>                        <span class="hljs-keyword">long</span> curDeadlineNanos = nextScheduledTaskDeadlineNanos();<br>                        <span class="hljs-keyword">if</span> (curDeadlineNanos == -<span class="hljs-number">1L</span>) &#123;<br>                            curDeadlineNanos = NONE; <span class="hljs-comment">// nothing on the calendar</span><br>                        &#125;<br>                        nextWakeupNanos.set(curDeadlineNanos);<br>                        <span class="hljs-keyword">try</span> &#123;<br>                            <span class="hljs-keyword">if</span> (!hasTasks()) &#123;<br>                                <span class="hljs-comment">// 执行Select方法。轮询就绪的Channel，方法会阻塞。</span><br>                                strategy = select(curDeadlineNanos);<br>                            &#125;<br>                        &#125; <span class="hljs-keyword">finally</span> &#123;<br>                            <span class="hljs-comment">// This update is just to help block unnecessary selector wakeups</span><br>                            <span class="hljs-comment">// so use of lazySet is ok (no race condition)</span><br>                            nextWakeupNanos.lazySet(AWAKE);<br>                        &#125;<br>                        <span class="hljs-comment">// fall through</span><br>                    <span class="hljs-keyword">default</span>:<br>                &#125;<br>            &#125; <span class="hljs-keyword">catch</span> (IOException e) &#123;<br>                <span class="hljs-comment">// If we receive an IOException here its because the Selector is messed up. Let&#x27;s rebuild</span><br>                <span class="hljs-comment">// the selector and retry. https://github.com/netty/netty/issues/8566</span><br>                rebuildSelector0();<br>                selectCnt = <span class="hljs-number">0</span>;<br>                handleLoopException(e);<br>                <span class="hljs-keyword">continue</span>;<br>            &#125;<br><br>            selectCnt++;<br>            cancelledKeys = <span class="hljs-number">0</span>;<br>            needsToSelectAgain = <span class="hljs-keyword">false</span>;<br>            <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> ioRatio = <span class="hljs-keyword">this</span>.ioRatio;<br>            <span class="hljs-keyword">boolean</span> ranTasks;<br>            <span class="hljs-keyword">if</span> (ioRatio == <span class="hljs-number">100</span>) &#123;<br>                <span class="hljs-comment">//如果I/O操作占比100%</span><br>                <span class="hljs-keyword">try</span> &#123;<br>                    <span class="hljs-keyword">if</span> (strategy &gt; <span class="hljs-number">0</span>) &#123;<br>                        <span class="hljs-comment">//当前需要处理的Key的数量&gt;0，用来处理轮询到的SelectionKey.</span><br>                        processSelectedKeys();<br>                    &#125;<br>                &#125; <span class="hljs-keyword">finally</span> &#123;<br>                    <span class="hljs-comment">// Ensure we always run tasks.</span><br> 					<span class="hljs-comment">// 执行所有任务。</span><br>                    ranTasks = runAllTasks();<br>                &#125;<br>            &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (strategy &gt; <span class="hljs-number">0</span>) &#123;<br>                <span class="hljs-comment">//计算当前I/O占比时间</span><br>                <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> ioStartTime = System.nanoTime();<br>                <span class="hljs-keyword">try</span> &#123;<br>                    <span class="hljs-comment">//当前需要处理的Key的数量&gt;0，用来处理轮询到的SelectionKey.</span><br>                    processSelectedKeys();<br>                &#125; <span class="hljs-keyword">finally</span> &#123;<br>                    <span class="hljs-comment">// Ensure we always run tasks.</span><br>                    <span class="hljs-comment">//按照时间比例执行队列任务</span><br>                    <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> ioTime = System.nanoTime() - ioStartTime;<br>                    ranTasks = runAllTasks(ioTime * (<span class="hljs-number">100</span> - ioRatio) / ioRatio);<br>                &#125;<br>            &#125; <span class="hljs-keyword">else</span> &#123;<br>                <span class="hljs-comment">//即使什么都没有执行也要执行最小时间单位的队列任务</span><br>                ranTasks = runAllTasks(<span class="hljs-number">0</span>); <span class="hljs-comment">// This will run the minimum number of tasks</span><br>            &#125;<br><br>            <span class="hljs-keyword">if</span> (ranTasks || strategy &gt; <span class="hljs-number">0</span>) &#123;<br>                <span class="hljs-keyword">if</span> (selectCnt &gt; MIN_PREMATURE_SELECTOR_RETURNS &amp;&amp; logger.isDebugEnabled()) &#123;<br>                    logger.debug(<span class="hljs-string">&quot;Selector.select() returned prematurely &#123;&#125; times in a row for Selector &#123;&#125;.&quot;</span>,<br>                                 selectCnt - <span class="hljs-number">1</span>, selector);<br>                &#125;<br>                selectCnt = <span class="hljs-number">0</span>;<br>                <span class="hljs-comment">// unexpectedSelectorWakeup(selectCnt) 判断当前是否有空轮询bug，如果存在空轮询bug需要处理（rebuild）。</span><br>            &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (unexpectedSelectorWakeup(selectCnt)) &#123; <span class="hljs-comment">// Unexpected wakeup (unusual case)</span><br>                selectCnt = <span class="hljs-number">0</span>;<br>            &#125;<br>        &#125; <span class="hljs-keyword">catch</span> (CancelledKeyException e) &#123;<br>            <span class="hljs-comment">// Harmless exception - log anyway</span><br>            <span class="hljs-keyword">if</span> (logger.isDebugEnabled()) &#123;<br>                logger.debug(CancelledKeyException.class.getSimpleName() + <span class="hljs-string">&quot; raised by a Selector &#123;&#125; - JDK bug?&quot;</span>,<br>                             selector, e);<br>            &#125;<br>        &#125; <span class="hljs-keyword">catch</span> (Error e) &#123;<br>            <span class="hljs-keyword">throw</span> e;<br>        &#125; <span class="hljs-keyword">catch</span> (Throwable t) &#123;<br>            handleLoopException(t);<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            <span class="hljs-comment">// Always handle shutdown even if the loop processing threw an exception.</span><br>            <span class="hljs-comment">//如果循环退出优雅关闭EventLoop</span><br>            <span class="hljs-keyword">try</span> &#123;<br>                <span class="hljs-keyword">if</span> (isShuttingDown()) &#123;<br>                    closeAll();<br>                    <span class="hljs-keyword">if</span> (confirmShutdown()) &#123;<br>                        <span class="hljs-keyword">return</span>;<br>                    &#125;<br>                &#125;<br>            &#125; <span class="hljs-keyword">catch</span> (Error e) &#123;<br>                <span class="hljs-keyword">throw</span> e;<br>            &#125; <span class="hljs-keyword">catch</span> (Throwable t) &#123;<br>                handleLoopException(t);<br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>其实整体的方法也是比较简单的，在这个方法主要可以分为以下几个部分：</p>
+<ul>
+<li><p><code>select(curDeadlineNanos)</code>用来轮询就绪的 Channel；</p>
+</li>
+<li><p><code>processSelectedKeys</code>用来处理轮询的SelectKey；</p>
+</li>
+<li><p><code>runAllTask</code> 用来执行队列任务。</p>
+</li>
+<li><p><code>unexpectedSelectorWakeup(selectCnt)</code>处理空轮询bug。</p>
+</li>
+</ul>
+<p>接下来我们就针对这几个核心方法进行分析解读。</p>
+<h3 id="select轮询就绪Key"><a href="#select轮询就绪Key" class="headerlink" title="select轮询就绪Key"></a>select轮询就绪Key</h3><p>首先我们看<code>select(curDeadlineNanos)</code>，这个方法用来轮询就绪的Channel。这个方法也非常的简单如果当前传进来的<code>deadlineNanos</code> 是一个无效值直接进行监听就绪的Channel。否则计算一个阻塞的超时时间，如果这个超时时间&lt;=0,直接非阻塞select，否则按照超时时间阻塞select。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//io.netty.channel.nio.NioEventLoop#select</span><br><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> <span class="hljs-title">select</span><span class="hljs-params">(<span class="hljs-keyword">long</span> deadlineNanos)</span> <span class="hljs-keyword">throws</span> IOException </span>&#123;<br>    <span class="hljs-keyword">if</span> (deadlineNanos == NONE) &#123;<br>        <span class="hljs-keyword">return</span> selector.select();<br>    &#125;<br>    <span class="hljs-comment">// Timeout will only be 0 if deadline is within 5 microsecs</span><br>    <span class="hljs-keyword">long</span> timeoutMillis = deadlineToDelayNanos(deadlineNanos + <span class="hljs-number">995000L</span>) / <span class="hljs-number">1000000L</span>;<br>    <span class="hljs-keyword">return</span> timeoutMillis &lt;= <span class="hljs-number">0</span> ? selector.selectNow() : selector.select(timeoutMillis);<br>&#125;<br><br><span class="hljs-comment">//java.nio.channels.Selector#select()</span><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * Selects a set of keys whose corresponding channels are ready for I/O</span><br><span class="hljs-comment"> * operations.</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * &lt;p&gt; This method performs a blocking &lt;a href=&quot;#selop&quot;&gt;selection</span><br><span class="hljs-comment"> * operation&lt;/a&gt;.  It returns only after at least one channel is selected,</span><br><span class="hljs-comment"> * this selector&#x27;s &#123;<span class="hljs-doctag">@link</span> #wakeup wakeup&#125; method is invoked, or the current</span><br><span class="hljs-comment"> * thread is interrupted, whichever comes first.  &lt;/p&gt;</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@return</span>  The number of keys, possibly zero,</span><br><span class="hljs-comment"> *          whose ready-operation sets were updated</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span>  IOException</span><br><span class="hljs-comment"> *          If an I/O error occurs</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span>  ClosedSelectorException</span><br><span class="hljs-comment"> *          If this selector is closed</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">int</span> <span class="hljs-title">select</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> IOException</span>;<br><br><br><span class="hljs-comment">//java.nio.channels.Selector#selectNow</span><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * Selects a set of keys whose corresponding channels are ready for I/O</span><br><span class="hljs-comment"> * operations.</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * &lt;p&gt; This method performs a non-blocking &lt;a href=&quot;#selop&quot;&gt;selection</span><br><span class="hljs-comment"> * operation&lt;/a&gt;.  If no channels have become selectable since the previous</span><br><span class="hljs-comment"> * selection operation then this method immediately returns zero.</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * &lt;p&gt; Invoking this method clears the effect of any previous invocations</span><br><span class="hljs-comment"> * of the &#123;<span class="hljs-doctag">@link</span> #wakeup wakeup&#125; method.  &lt;/p&gt;</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@return</span>  The number of keys, possibly zero, whose ready-operation sets</span><br><span class="hljs-comment"> *          were updated by the selection operation</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span>  IOException</span><br><span class="hljs-comment"> *          If an I/O error occurs</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span>  ClosedSelectorException</span><br><span class="hljs-comment"> *          If this selector is closed</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">int</span> <span class="hljs-title">selectNow</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> IOException</span>;<br><br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * Selects a set of keys whose corresponding channels are ready for I/O</span><br><span class="hljs-comment"> * operations.</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * &lt;p&gt; This method performs a blocking &lt;a href=&quot;#selop&quot;&gt;selection</span><br><span class="hljs-comment"> * operation&lt;/a&gt;.  It returns only after at least one channel is selected,</span><br><span class="hljs-comment"> * this selector&#x27;s &#123;<span class="hljs-doctag">@link</span> #wakeup wakeup&#125; method is invoked, the current</span><br><span class="hljs-comment"> * thread is interrupted, or the given timeout period expires, whichever</span><br><span class="hljs-comment"> * comes first.</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * &lt;p&gt; This method does not offer real-time guarantees: It schedules the</span><br><span class="hljs-comment"> * timeout as if by invoking the &#123;<span class="hljs-doctag">@link</span> Object#wait(long)&#125; method. &lt;/p&gt;</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@param</span>  timeout  If positive, block for up to &lt;tt&gt;timeout&lt;/tt&gt;</span><br><span class="hljs-comment"> *                  milliseconds, more or less, while waiting for a</span><br><span class="hljs-comment"> *                  channel to become ready; if zero, block indefinitely;</span><br><span class="hljs-comment"> *                  must not be negative</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@return</span>  The number of keys, possibly zero,</span><br><span class="hljs-comment"> *          whose ready-operation sets were updated</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span>  IOException</span><br><span class="hljs-comment"> *          If an I/O error occurs</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span>  ClosedSelectorException</span><br><span class="hljs-comment"> *          If this selector is closed</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span>  IllegalArgumentException</span><br><span class="hljs-comment"> *          If the value of the timeout argument is negative</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">int</span> <span class="hljs-title">select</span><span class="hljs-params">(<span class="hljs-keyword">long</span> timeout)</span></span><br><span class="hljs-function">    <span class="hljs-keyword">throws</span> IOException</span>;<br></code></pre></td></tr></table></figure>
+
+<p>通过分析上面的代码，我们可以看到阻塞的Select当遇到以下4种情况会返回：</p>
+<ul>
+<li><p>当至少有一个Key就绪。</p>
+</li>
+<li><p>当selector的wakeup被调用。</p>
+</li>
+<li><p>当前线程被interrupt。</p>
+</li>
+<li><p>超时自动醒来。</p>
+</li>
+</ul>
+<p>当然这里还有一个空轮询bug。</p>
+<h3 id="processSelectedKeys处理就绪Keys"><a href="#processSelectedKeys处理就绪Keys" class="headerlink" title="processSelectedKeys处理就绪Keys"></a>processSelectedKeys处理就绪Keys</h3><p>第二个部分，<code>processSelectedKeys</code>：主要处理第一部分轮询到的就绪Keys，并取出这些SelectionKey及附件attachment。附件有两种类型：第一中是<code>AbstractNioChannel</code>，第二种是<code>NioTask</code>。其中，第二种附件在Netty内部未使用，因此只分析<code>AbstractNioChannel</code>。根据Key的事件类型触发<code>AbstractNioChannel</code>的<code>unsafe()</code>的不同方法。这些方法主要是I/O的读写操作。其具体源码包括附件注册，在剖析Channel源码时会详细讲解。processSelectedKeys的核心代码解读如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//io.netty.channel.nio.NioEventLoop#processSelectedKeys</span><br><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processSelectedKeys</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-comment">//判断优化后的selectedKeys是否为空</span><br>    <span class="hljs-keyword">if</span> (selectedKeys != <span class="hljs-keyword">null</span>) &#123;<br>        <span class="hljs-comment">// 优化处理</span><br>        processSelectedKeysOptimized();<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-comment">// 原始处理</span><br>        processSelectedKeysPlain(selector.selectedKeys());<br>    &#125;<br>&#125;<br><br><span class="hljs-comment">//io.netty.channel.nio.NioEventLoop#processSelectedKeysOptimized</span><br><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processSelectedKeysOptimized</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; selectedKeys.size; ++i) &#123;<br>        <span class="hljs-keyword">final</span> SelectionKey k = selectedKeys.keys[i];<br>        <span class="hljs-comment">// null out entry in the array to allow to have it GC&#x27;ed once the Channel close</span><br>        <span class="hljs-comment">// See https://github.com/netty/netty/issues/2363</span><br>        <span class="hljs-comment">// 将selectedKeys.keys[i]设置为null,并被JVM快速回收。</span><br>        selectedKeys.keys[i] = <span class="hljs-keyword">null</span>;<br><br>        <span class="hljs-keyword">final</span> Object a = k.attachment();<br><br>        <span class="hljs-keyword">if</span> (a <span class="hljs-keyword">instanceof</span> AbstractNioChannel) &#123;<br>            <span class="hljs-comment">//根据Key的就绪事件触发对应的事件方法。</span><br>            processSelectedKey(k, (AbstractNioChannel) a);<br>        &#125; <span class="hljs-keyword">else</span> &#123;<br>            <span class="hljs-meta">@SuppressWarnings(&quot;unchecked&quot;)</span><br>            NioTask&lt;SelectableChannel&gt; task = (NioTask&lt;SelectableChannel&gt;) a;<br>            processSelectedKey(k, task);<br>        &#125;<br><br>        <span class="hljs-keyword">if</span> (needsToSelectAgain) &#123;<br>            <span class="hljs-comment">// null out entries in the array to allow to have it GC&#x27;ed once the Channel close</span><br>            <span class="hljs-comment">// See https://github.com/netty/netty/issues/2363</span><br>            selectedKeys.reset(i + <span class="hljs-number">1</span>);<br><br>            selectAgain();<br>            i = -<span class="hljs-number">1</span>;<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-comment">//io.netty.channel.nio.NioEventLoop#processSelectedKey(java.nio.channels.SelectionKey, io.netty.channel.nio.AbstractNioChannel)</span><br><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processSelectedKey</span><span class="hljs-params">(SelectionKey k, AbstractNioChannel ch)</span> </span>&#123;<br>    <span class="hljs-keyword">final</span> AbstractNioChannel.NioUnsafe unsafe = ch.unsafe();<br>    <span class="hljs-comment">//如果当前selectionKey无效，直接关闭unsafe。</span><br>    <span class="hljs-keyword">if</span> (!k.isValid()) &#123;<br>        <span class="hljs-keyword">final</span> EventLoop eventLoop;<br>        <span class="hljs-keyword">try</span> &#123;<br>            eventLoop = ch.eventLoop();<br>        &#125; <span class="hljs-keyword">catch</span> (Throwable ignored) &#123;<br>            <span class="hljs-comment">// If the channel implementation throws an exception because there is no event loop, we ignore this</span><br>            <span class="hljs-comment">// because we are only trying to determine if ch is registered to this event loop and thus has authority</span><br>            <span class="hljs-comment">// to close ch.</span><br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <span class="hljs-comment">// Only close ch if ch is still registered to this EventLoop. ch could have deregistered from the event loop</span><br>        <span class="hljs-comment">// and thus the SelectionKey could be cancelled as part of the deregistration process, but the channel is</span><br>        <span class="hljs-comment">// still healthy and should not be closed.</span><br>        <span class="hljs-comment">// See https://github.com/netty/netty/issues/5125</span><br>        <span class="hljs-keyword">if</span> (eventLoop == <span class="hljs-keyword">this</span>) &#123;<br>            <span class="hljs-comment">// close the channel if the key is not valid anymore</span><br>            unsafe.close(unsafe.voidPromise());<br>        &#125;<br>        <span class="hljs-keyword">return</span>;<br>    &#125;<br><br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-keyword">int</span> readyOps = k.readyOps();<br>        <span class="hljs-comment">// We first need to call finishConnect() before try to trigger a read(...) or write(...) as otherwise</span><br>        <span class="hljs-comment">// the NIO JDK channel implementation may throw a NotYetConnectedException.</span><br>        <span class="hljs-comment">// 处理连接事件</span><br>        <span class="hljs-keyword">if</span> ((readyOps &amp; SelectionKey.OP_CONNECT) != <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-comment">// remove OP_CONNECT as otherwise Selector.select(..) will always return without blocking</span><br>            <span class="hljs-comment">// See https://github.com/netty/netty/issues/924</span><br>            <span class="hljs-keyword">int</span> ops = k.interestOps();<br>            ops &amp;= ~SelectionKey.OP_CONNECT;<br>            k.interestOps(ops);<br><br>            unsafe.finishConnect();<br>        &#125;<br><br>        <span class="hljs-comment">// 处理写事件</span><br>        <span class="hljs-comment">// Process OP_WRITE first as we may be able to write some queued buffers and so free memory.</span><br>        <span class="hljs-keyword">if</span> ((readyOps &amp; SelectionKey.OP_WRITE) != <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-comment">// Call forceFlush which will also take care of clear the OP_WRITE once there is nothing left to write</span><br>            ch.unsafe().forceFlush();<br>        &#125;<br><br>        <span class="hljs-comment">// 处理读事件</span><br>        <span class="hljs-comment">// Also check for readOps of 0 to workaround possible JDK bug which may otherwise lead</span><br>        <span class="hljs-comment">// to a spin loop</span><br>        <span class="hljs-keyword">if</span> ((readyOps &amp; (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != <span class="hljs-number">0</span> || readyOps == <span class="hljs-number">0</span>) &#123;<br>            unsafe.read();<br>        &#125;<br>    &#125; <span class="hljs-keyword">catch</span> (CancelledKeyException ignored) &#123;<br>        unsafe.close(unsafe.voidPromise());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="runAllTasks-执行队列中任务"><a href="#runAllTasks-执行队列中任务" class="headerlink" title="runAllTasks 执行队列中任务"></a>runAllTasks 执行队列中任务</h3><p>第三个部分，<code>runAllTasks</code>：主要目的是执行taskQueue队列和定时任务队列中的任务，如心跳检测，异步写操作等。首先NioEventLoop会根据ioRatio(I/O事件与taskQueue运行时间占比)执行任务时长。这里有一个点，就是如果IO占比达到100%不应该是所有的时间都会用来执行I/O时间，不会来执行队列任务么？后来从注释中发现当<code>ioRatio</code>这个参数<strong>达到100%时，将不在平衡I/O任务和任务队列之间的占比，会处理所有的I/O事件和所有的任务队列。</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//run方法中的runAllTask</span><br><span class="hljs-keyword">if</span> (ioRatio == <span class="hljs-number">100</span>) &#123;<br>    <span class="hljs-comment">//如果I/O操作占比100%</span><br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-keyword">if</span> (strategy &gt; <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-comment">//当前需要处理的Key的数量&gt;0，用来处理轮询到的SelectionKey.</span><br>            processSelectedKeys();<br>        &#125;<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        <span class="hljs-comment">// Ensure we always run tasks.</span><br>        <span class="hljs-comment">// 执行所有任务。</span><br>        ranTasks = runAllTasks();<br>    &#125;<br>&#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (strategy &gt; <span class="hljs-number">0</span>) &#123;<br>    <span class="hljs-comment">//计算当前I/O占比时间</span><br>    <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> ioStartTime = System.nanoTime();<br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">//当前需要处理的Key的数量&gt;0，用来处理轮询到的SelectionKey.</span><br>        processSelectedKeys();<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        <span class="hljs-comment">// Ensure we always run tasks.</span><br>        <span class="hljs-comment">//按照时间比例执行队列任务</span><br>        <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> ioTime = System.nanoTime() - ioStartTime;<br>        ranTasks = runAllTasks(ioTime * (<span class="hljs-number">100</span> - ioRatio) / ioRatio);<br>    &#125;<br>&#125; <span class="hljs-keyword">else</span> &#123;<br>    <span class="hljs-comment">//即使什么都没有执行也要执行最小时间单位的队列任务</span><br>    ranTasks = runAllTasks(<span class="hljs-number">0</span>); <span class="hljs-comment">// This will run the minimum number of tasks</span><br>&#125;<br><br><br><span class="hljs-comment">// io.netty.channel.nio.NioEventLoop#setIoRatio</span><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * Sets the percentage of the desired amount of time spent for I/O in the event loop. Value range from 1-100.</span><br><span class="hljs-comment"> * The default value is &#123;<span class="hljs-doctag">@code</span> 50&#125;, which means the event loop will try to spend the same amount of time for I/O</span><br><span class="hljs-comment"> * as for non-I/O tasks. The lower the number the more time can be spent on non-I/O tasks. If value set to</span><br><span class="hljs-comment"> * &#123;<span class="hljs-doctag">@code</span> 100&#125;, this feature will be disabled and event loop will not attempt to balance I/O and non-I/O tasks.</span><br><span class="hljs-comment"> */</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setIoRatio</span><span class="hljs-params">(<span class="hljs-keyword">int</span> ioRatio)</span> </span>&#123;<br>    <span class="hljs-keyword">if</span> (ioRatio &lt;= <span class="hljs-number">0</span> || ioRatio &gt; <span class="hljs-number">100</span>) &#123;<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(<span class="hljs-string">&quot;ioRatio: &quot;</span> + ioRatio + <span class="hljs-string">&quot; (expected: 0 &lt; ioRatio &lt;= 100)&quot;</span>);<br>    &#125;<br>    <span class="hljs-keyword">this</span>.ioRatio = ioRatio;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>由于一个NioEventLoop线程需要管理很多Channel，这些Channel的任务非常多，若要全部执行完，则I/O事可能得不到及时的处理，因此每次执行64个任务后就会检测执行任务的时间已经用完，如果任务执行的时间用完了，就不再执行后续的任务了。代码解析如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//io.netty.util.concurrent.SingleThreadEventExecutor#runAllTasks()</span><br><span class="hljs-comment">/**</span><br><span class="hljs-comment">* Poll all tasks from the task queue and run them via &#123;<span class="hljs-doctag">@link</span> Runnable#run()&#125; method.</span><br><span class="hljs-comment">*</span><br><span class="hljs-comment">* <span class="hljs-doctag">@return</span> &#123;<span class="hljs-doctag">@code</span> true&#125; if and only if at least one task was run</span><br><span class="hljs-comment">*/</span><br><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">runAllTasks</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-function"><span class="hljs-keyword">assert</span> <span class="hljs-title">inEventLoop</span><span class="hljs-params">()</span></span>;<br>    <span class="hljs-keyword">boolean</span> fetchedAll;<br>    <span class="hljs-keyword">boolean</span> ranAtLeastOne = <span class="hljs-keyword">false</span>;<br><br>    <span class="hljs-keyword">do</span> &#123;<br>        <span class="hljs-comment">// 循环拿出队列中的所有任务并执行任务</span><br>        fetchedAll = fetchFromScheduledTaskQueue();<br>        <span class="hljs-keyword">if</span> (runAllTasksFrom(taskQueue)) &#123;<br>            ranAtLeastOne = <span class="hljs-keyword">true</span>;<br>        &#125;<br>    &#125; <span class="hljs-keyword">while</span> (!fetchedAll); <span class="hljs-comment">// keep on processing until we fetched all scheduled tasks.</span><br><br>    <span class="hljs-keyword">if</span> (ranAtLeastOne) &#123;<br>        lastExecutionTime = ScheduledFutureTask.nanoTime();<br>    &#125;<br>    <span class="hljs-comment">//收尾工作</span><br>    afterRunningAllTasks();<br>    <span class="hljs-keyword">return</span> ranAtLeastOne;<br>&#125;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment">* Poll all tasks from the task queue and run them via &#123;<span class="hljs-doctag">@link</span> Runnable#run()&#125; method.  This method stops running</span><br><span class="hljs-comment">* the tasks in the task queue and returns if it ran longer than &#123;<span class="hljs-doctag">@code</span> timeoutNanos&#125;.</span><br><span class="hljs-comment">*/</span><br><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">runAllTasks</span><span class="hljs-params">(<span class="hljs-keyword">long</span> timeoutNanos)</span> </span>&#123;<br>   <span class="hljs-comment">//从队列中取出任务</span><br>    fetchFromScheduledTaskQueue();<br>    Runnable task = pollTask();<br>    <span class="hljs-keyword">if</span> (task == <span class="hljs-keyword">null</span>) &#123;<br>        <span class="hljs-comment">// 如果当前没有任务直接返回</span><br>        afterRunningAllTasks();<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;<br>    &#125;<br><br>    <span class="hljs-comment">//计算得出执行任务的deadline</span><br>    <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> deadline = timeoutNanos &gt; <span class="hljs-number">0</span> ? ScheduledFutureTask.nanoTime() + timeoutNanos : <span class="hljs-number">0</span>;<br>    <span class="hljs-keyword">long</span> runTasks = <span class="hljs-number">0</span>;<br>    <span class="hljs-keyword">long</span> lastExecutionTime;<br>    <span class="hljs-keyword">for</span> (;;) &#123;<br>        safeExecute(task);<br><br>        runTasks ++;<br><br>        <span class="hljs-comment">// Check timeout every 64 tasks because nanoTime() is relatively expensive.</span><br>        <span class="hljs-comment">// <span class="hljs-doctag">XXX:</span> Hard-coded value - will make it configurable if it is really a problem.</span><br>        <span class="hljs-comment">//执行了64次任务检查时间是否超时</span><br>        <span class="hljs-keyword">if</span> ((runTasks &amp; <span class="hljs-number">0x3F</span>) == <span class="hljs-number">0</span>) &#123;<br>            lastExecutionTime = ScheduledFutureTask.nanoTime();<br>            <span class="hljs-keyword">if</span> (lastExecutionTime &gt;= deadline) &#123;<br>                <span class="hljs-keyword">break</span>;<br>            &#125;<br>        &#125;<br><br>        <span class="hljs-comment">//如果没有任务了跳出循环</span><br>        task = pollTask();<br>        <span class="hljs-keyword">if</span> (task == <span class="hljs-keyword">null</span>) &#123;<br>            lastExecutionTime = ScheduledFutureTask.nanoTime();<br>            <span class="hljs-keyword">break</span>;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-comment">//收尾处理</span><br>    afterRunningAllTasks();<br>    <span class="hljs-keyword">this</span>.lastExecutionTime = lastExecutionTime;<br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="处理空轮询bug"><a href="#处理空轮询bug" class="headerlink" title="处理空轮询bug"></a>处理空轮询bug</h3><p>最后一个部分是对空轮询bug的处理，<strong>Netty通过重新构建Selector的方式去规避空轮询的bug</strong>。Netty是使用计算空轮询的次数来处理这个bug。如果当前轮询未执行任何I/O任务或处理任何队列任务，则selectCnt累加，当空轮询次数达到了阈值则重新构建Selector。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//selectorAutoRebuildThreshold重新构建阈值，从系统参数中取，默认值512</span><br><span class="hljs-keyword">int</span> selectorAutoRebuildThreshold = SystemPropertyUtil.getInt(<span class="hljs-string">&quot;io.netty.selectorAutoRebuildThreshold&quot;</span>, <span class="hljs-number">512</span>);<br><span class="hljs-keyword">if</span> (selectorAutoRebuildThreshold &lt; MIN_PREMATURE_SELECTOR_RETURNS) &#123;<br>    selectorAutoRebuildThreshold = <span class="hljs-number">0</span>;<br>&#125;<br><br>SELECTOR_AUTO_REBUILD_THRESHOLD = selectorAutoRebuildThreshold;<br><br><br><span class="hljs-comment">// io.netty.channel.nio.NioEventLoop#unexpectedSelectorWakeup</span><br><span class="hljs-comment">// returns true if selectCnt should be reset</span><br><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">unexpectedSelectorWakeup</span><span class="hljs-params">(<span class="hljs-keyword">int</span> selectCnt)</span> </span>&#123;<br>    <span class="hljs-keyword">if</span> (Thread.interrupted()) &#123;<br>        <span class="hljs-comment">// Thread was interrupted so reset selected keys and break so we not run into a busy loop.</span><br>        <span class="hljs-comment">// As this is most likely a bug in the handler of the user or it&#x27;s client library we will</span><br>        <span class="hljs-comment">// also log it.</span><br>        <span class="hljs-comment">//</span><br>        <span class="hljs-comment">// See https://github.com/netty/netty/issues/2426</span><br>        <span class="hljs-keyword">if</span> (logger.isDebugEnabled()) &#123;<br>            logger.debug(<span class="hljs-string">&quot;Selector.select() returned prematurely because &quot;</span> +<br>                         <span class="hljs-string">&quot;Thread.currentThread().interrupt() was called. Use &quot;</span> +<br>                         <span class="hljs-string">&quot;NioEventLoop.shutdownGracefully() to shutdown the NioEventLoop.&quot;</span>);<br>        &#125;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;<br>    &#125;<br>    <span class="hljs-keyword">if</span> (SELECTOR_AUTO_REBUILD_THRESHOLD &gt; <span class="hljs-number">0</span> &amp;&amp;<br>        selectCnt &gt;= SELECTOR_AUTO_REBUILD_THRESHOLD) &#123;<br>        <span class="hljs-comment">// The selector returned prematurely many times in a row.</span><br>        <span class="hljs-comment">// Rebuild the selector to work around the problem.</span><br>        logger.warn(<span class="hljs-string">&quot;Selector.select() returned prematurely &#123;&#125; times in a row; rebuilding Selector &#123;&#125;.&quot;</span>,<br>                    selectCnt, selector);<br>        rebuildSelector();<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;<br>    &#125;<br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="run-方法小结"><a href="#run-方法小结" class="headerlink" title="run()方法小结"></a>run()方法小结</h3><p>最后回到NioEventLoop的<code>run()</code>方法，在这个方法中首先调用<code>select(curDeadlineNanos）</code>方法轮训就绪的Channel；然后调用<code>processSelectedKeys()</code>方法处理I/O事件；最后执行<code>runAllTasks()</code>方法处理任务队列。如果当前是空轮询，则进行空轮询校验<code>unexpectedSelectorWakeup(selectCnt)</code>，如果当前空轮训的次数大于或等于阈值（默认512）则重新构建selector。以上就是关于整个run方法的梳理。</p>
+<h2 id="重新构建Selector和Channel的注册"><a href="#重新构建Selector和Channel的注册" class="headerlink" title="重新构建Selector和Channel的注册"></a>重新构建Selector和Channel的注册</h2><p>从selector函数的代码解读中发现，<strong>Netty在空轮询次数大于或等于阈值（默认512）时，需要重新构建Selector</strong>。重新构建的过程为，<strong>重新打开一个新的Selector，将旧的Selector上的key和Attachment复制过去，同时关闭旧的selector</strong>，具体代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// io.netty.channel.nio.NioEventLoop#rebuildSelector</span><br><span class="hljs-comment">/**</span><br><span class="hljs-comment">* Replaces the current &#123;<span class="hljs-doctag">@link</span> Selector&#125; of this event loop with newly created &#123;<span class="hljs-doctag">@link</span> Selector&#125;s to work</span><br><span class="hljs-comment">* around the infamous epoll 100% CPU bug.</span><br><span class="hljs-comment">*/</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">rebuildSelector</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-keyword">if</span> (!inEventLoop()) &#123;<br>        execute(<span class="hljs-keyword">new</span> Runnable() &#123;<br>            <span class="hljs-meta">@Override</span><br>            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;<br>                rebuildSelector0();<br>            &#125;<br>        &#125;);<br>        <span class="hljs-keyword">return</span>;<br>    &#125;<br>    rebuildSelector0();<br>&#125;<br><br><span class="hljs-comment">//io.netty.channel.nio.NioEventLoop#rebuildSelector0</span><br><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">rebuildSelector0</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-keyword">final</span> Selector oldSelector = selector;<br>    <span class="hljs-keyword">final</span> SelectorTuple newSelectorTuple;<br><br>    <span class="hljs-keyword">if</span> (oldSelector == <span class="hljs-keyword">null</span>) &#123;<br>        <span class="hljs-keyword">return</span>;<br>    &#125;<br><br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// 重新打开一个新的Selector</span><br>        newSelectorTuple = openSelector();<br>    &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>        logger.warn(<span class="hljs-string">&quot;Failed to create a new Selector.&quot;</span>, e);<br>        <span class="hljs-keyword">return</span>;<br>    &#125;<br><br>    <span class="hljs-comment">// Register all channels to the new Selector.</span><br>    <span class="hljs-keyword">int</span> nChannels = <span class="hljs-number">0</span>;<br>    <span class="hljs-comment">// 循环将旧的selector上的attachment注册到新的selctor上</span><br>    <span class="hljs-keyword">for</span> (SelectionKey key: oldSelector.keys()) &#123;<br>        Object a = key.attachment();<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//判断当前的Key是否有效</span><br>            <span class="hljs-keyword">if</span> (!key.isValid() || key.channel().keyFor(newSelectorTuple.unwrappedSelector) != <span class="hljs-keyword">null</span>) &#123;<br>                <span class="hljs-keyword">continue</span>;<br>            &#125;<br><br>            <span class="hljs-comment">//在旧的Selector上触发的事件需要取消</span><br>            <span class="hljs-keyword">int</span> interestOps = key.interestOps();<br>            key.cancel();<br>            <span class="hljs-comment">//把Channel重新注册到新的Selector上</span><br>            SelectionKey newKey = key.channel().register(newSelectorTuple.unwrappedSelector, interestOps, a);<br>            <span class="hljs-keyword">if</span> (a <span class="hljs-keyword">instanceof</span> AbstractNioChannel) &#123;<br>                <span class="hljs-comment">// Update SelectionKey</span><br>                ((AbstractNioChannel) a).selectionKey = newKey;<br>            &#125;<br>            nChannels ++;<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            logger.warn(<span class="hljs-string">&quot;Failed to re-register a Channel to the new Selector.&quot;</span>, e);<br>            <span class="hljs-keyword">if</span> (a <span class="hljs-keyword">instanceof</span> AbstractNioChannel) &#123;<br>                AbstractNioChannel ch = (AbstractNioChannel) a;<br>                ch.unsafe().close(ch.unsafe().voidPromise());<br>            &#125; <span class="hljs-keyword">else</span> &#123;<br>                <span class="hljs-meta">@SuppressWarnings(&quot;unchecked&quot;)</span><br>                NioTask&lt;SelectableChannel&gt; task = (NioTask&lt;SelectableChannel&gt;) a;<br>                invokeChannelUnregistered(task, key, e);<br>            &#125;<br>        &#125;<br>    &#125;<br><br>    selector = newSelectorTuple.selector;<br>    unwrappedSelector = newSelectorTuple.unwrappedSelector;<br><br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// time to close the old selector as everything else is registered to the new one</span><br>        <span class="hljs-comment">// 关闭旧Selector</span><br>        oldSelector.close();<br>    &#125; <span class="hljs-keyword">catch</span> (Throwable t) &#123;<br>        <span class="hljs-keyword">if</span> (logger.isWarnEnabled()) &#123;<br>            logger.warn(<span class="hljs-string">&quot;Failed to close the old Selector.&quot;</span>, t);<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">if</span> (logger.isInfoEnabled()) &#123;<br>        logger.info(<span class="hljs-string">&quot;Migrated &quot;</span> + nChannels + <span class="hljs-string">&quot; channel(s) to the new Selector.&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>注册方法<code>register()</code>在两个地方被调用：一是端口绑定前，需要把NioServerSocketChannel注册到Boss线程的Selector上；二是当NioEventLoop监听到有链路接入时，把链路SocketChannel包装成NioSocketChannel，并注册到Worker线程中。最终调用NioSocketChannel的辅助对象unsafe的register方法，unsafe执行父类<code>AbstractUnsafe</code>的<code>register()</code>模板方法。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>这一小节我们分析了NioEventLoop的源码包括两个部分分别是<code>NioEventLoopGroup</code>和<code>NioEventLoop</code>，其中一个NioEventLoopGroup中包含一个或多个NIoEventLoop。其中NioEventLoopGroup的源码较为简单，包括<strong>创建NioEventLoop并完成初始化</strong>、<strong>创建线程选择器提供获取线程的策略</strong>、<strong>创建线程工厂并构造线程执行器</strong>。创建时候通过指定或是系统默认的线程数循环创建NioEventLoop。调用<code>newChild()</code>初始化，这个方法也很简单，初始化了一些必要的参数之后，构造了一个<code>NioEventLoop</code>。选择器也很简单，依据EventLoop的个数有两种策略，偶数使用&amp;的策略，基数使用取余的策略。随后是ThreadFactory将新创建的线程包装成<code>FastThreadLocalThread</code>。随后我们剖析了NioEventLoop的源码。NioEventLoop的源码可比NioEventLoopGroup 的源码复杂多了。首先我们分析了NioEventLoop是如何开启一个Selector的。在开启Selector，我们可以使用<code>io.netty.noKeySetOptimization</code>选择开启优化Selector。随后我们梳理了NioEventLoop核心的run方法，run方法整体的逻辑上包括select轮询就绪Key，processSelectedKeys处理就绪Keys，runAllTask执行队列中的任务。run方法的最后校验判断当前是否存在空轮询的bug，如果空轮询达到一定次数则重新构建select和注册channel。下一小节我们将对Channel进行分析。</p>
+<h1 id="学习资料"><a href="#学习资料" class="headerlink" title="学习资料"></a>学习资料</h1><ul>
+<li><p><a target="_blank" rel="noopener" href="https://book.douban.com/subject/35246428/">Netty源码剖析与应用</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/3f6e997efd27">Netty 源码解析 ——— NioEventLoop 详解</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/JMLiu/p/8451464.html">java NIO之SelectedKey</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/3fe79e24f8a1">关于AccessController.doPrivileged</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_44575881/article/details/86552016">Linux中的setuid简介</a></p>
+</li>
+</ul>
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/NIO%E4%B8%8E%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/">NIO与网络编程</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Java%E7%9F%A5%E8%AF%86%E7%BB%93%E6%9E%84%E6%A2%B3%E7%90%86/">Java知识结构梳理</a>
+                    
+                      <a class="hover-with-bg" href="/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">学习总结</a>
+                    
+                      <a class="hover-with-bg" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a>
+                    
+                      <a class="hover-with-bg" href="/tags/%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">源码剖析</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/10/06/netty-demo-and-simple-gateway/">
+                        <span class="hidden-mobile">Netty实战 — 基础Demo与API网关实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+  </div>
+  
+
+  
+
+  
+</footer>
+
+<!-- SCRIPTS -->
+
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.0/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      $('#local-search-input').on('click', function() {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      });
+      $('#modalSearch').on('shown.bs.modal', function() {
+        $('#local-search-input').focus();
+      });
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+
+</body>
+</html>
