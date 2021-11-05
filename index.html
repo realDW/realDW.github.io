@@ -182,6 +182,66 @@
     
     
       <div class="col-12 col-md-4 m-auto index-img">
+        <a href="/2021/11/05/netty-source-code-channel/" target="_self">
+          <img src="https://gitee.com/realDaiwei/img/raw/master/he-zhu-2Q7Af91a4Hk-unsplash.jpg" srcset="/img/loading.gif" alt="核心组件源码剖析 — Channel">
+        </a>
+      </div>
+    
+    <article class="col-12 col-md-8 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2021/11/05/netty-source-code-channel/">核心组件源码剖析 — Channel</a>
+      </h1>
+
+      <p class="index-excerpt">
+        <a href="/2021/11/05/netty-source-code-channel/">
+          
+          
+            
+          
+          前言上一小节我们梳理了NioEventLoop，通过梳理我们知道，NioEventLoop本质上就是封装的执行线程，线程通过NioEventLoopGroup构造创建。NioEventLoop通过select()方法监听selectKey触发对应连接，读/写事件。并在每次的循环中执行一定的任务队列中的任务。而每次事件的触发都是基于Channel实现的。这里的Channel不是NIO中的Channe
+        </a>
+      </p>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2021-11-05 08:38" pubdate>
+              2021-11-05
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/NIO%E4%B8%8E%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/">NIO与网络编程</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Java%E7%9F%A5%E8%AF%86%E7%BB%93%E6%9E%84%E6%A2%B3%E7%90%86/">Java知识结构梳理</a>
+            
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">学习总结</a>
+            
+              <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a>
+            
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">源码剖析</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+      <div class="col-12 col-md-4 m-auto index-img">
         <a href="/2021/10/16/netty-source-code-nioEventLoop/" target="_self">
           <img src="https://gitee.com/realDaiwei/img/raw/master/clay-leconey-5-X2CQ0fE30-unsplash.jpg" srcset="/img/loading.gif" alt="核心组件源码剖析 — NioEventLoop">
         </a>
@@ -675,64 +735,6 @@
             <i class="iconfont icon-date"></i>
             <time datetime="2021-06-27 01:28" pubdate>
               2021-06-27
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-category"></i>
-            
-              <a href="/categories/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">Java虚拟机</a>
-            
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/JVM/">JVM</a>
-            
-              <a href="/tags/Java%E7%9F%A5%E8%AF%86%E7%BB%93%E6%9E%84%E6%A2%B3%E7%90%86/">Java知识结构梳理</a>
-            
-              <a href="/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">学习总结</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-      <div class="col-12 col-md-4 m-auto index-img">
-        <a href="/2021/06/11/garbage-collector-1/" target="_self">
-          <img src="https://gitee.com/realDaiwei/img/raw/master/aavron-delos-santos-0ICdMBnanic-unsplash.jpg" srcset="/img/loading.gif" alt="JVM GC篇 — 垃圾收集器（上）">
-        </a>
-      </div>
-    
-    <article class="col-12 col-md-8 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2021/06/11/garbage-collector-1/">JVM GC篇 — 垃圾收集器（上）</a>
-      </h1>
-
-      <p class="index-excerpt">
-        <a href="/2021/06/11/garbage-collector-1/">
-          
-          
-            
-          
-          前言前面一小节我们介绍了介绍了GC的一般性原理和垃圾回收算法，通过对前面知识的学习，我们基本掌握了垃圾收集的一般理论知识。但是理论终究知识在之上，距离真正的实践还有一定的差距。前面我们提到了第一个带有内存动态分配和垃圾收集的编程语言并不是 Java 而是1960年诞生的Lisp。当然这一小节中我们并不会梳理 Lisp 实现的垃圾收集器。这一小节我们会先从经典垃圾收集器入手，梳理各个垃圾收集器的特性
-        </a>
-      </p>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-06-11 01:03" pubdate>
-              2021-06-11
             </time>
           </div>
         
