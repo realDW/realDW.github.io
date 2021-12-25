@@ -20,7 +20,7 @@
   <meta name="author" content="Daiwei">
   <meta name="keywords" content="">
   
-  <title>归档 - Daiwei‘s blog</title>
+  <title>Daiwei‘s blog</title>
 
   <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
 
@@ -50,7 +50,7 @@
 
 
 <body>
-  <header style="height: 60vh;">
+  <header style="height: 100vh;">
     <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand"
@@ -144,18 +144,22 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('https://gitee.com/realDaiwei/img/raw/master/pic1.jpg') no-repeat center center;
+         style="background: url('https://gitee.com/realDaiwei/img/raw/master/index.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
           <div class="page-header text-center fade-in-up">
-            <span class="h2" id="subtitle" title="归档">
+            <span class="h2" id="subtitle" title="从泥土到星辰。">
               
             </span>
 
             
           </div>
 
+          
+            <div class="scroll-down-bar">
+              <i class="iconfont icon-arrowdown"></i>
+            </div>
           
         </div>
       </div>
@@ -166,90 +170,82 @@
     
       <div class="container nopadding-x-md">
         <div class="py-5" id="board"
-          >
+          style=margin-top:0>
           
           <div class="container">
             <div class="row">
               <div class="col-12 col-md-10 m-auto">
                 
 
-<div class="list-group">
-  <p class="h4">共计 21 篇文章</p>
-  <hr>
-  
-  
+
+  <div class="row mx-auto index-card">
     
-      
-      <p class="h5">2021</p>
     
-    <a href="/2021/12/25/netty-source-code-bytebuf/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">netty-source-code-bytebuf</span>
-      <time style="float: right;">12-25</time>
-    </a>
-  
+      <div class="col-12 col-md-4 m-auto index-img">
+        <a href="/2021/03/07/100w-data-insert/" target="_self">
+          <img src="https://gitee.com/realDaiwei/img/raw/master/tom-winckels-I7oLRdM9YIw-unsplash%20(1).jpg" srcset="/img/loading.gif" alt="100w数据插入实现与思考">
+        </a>
+      </div>
     
-    <a href="/2021/11/05/netty-source-code-channel/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">Netty核心组件源码剖析 — Channel</span>
-      <time style="float: right;">11-05</time>
-    </a>
-  
-    
-    <a href="/2021/10/16/netty-source-code-nioEventLoop/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">Netty核心组件源码剖析 — NioEventLoop</span>
-      <time style="float: right;">10-16</time>
-    </a>
-  
-    
-    <a href="/2021/10/06/netty-demo-and-simple-gateway/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">Netty实战 — 基础Demo与API网关实战</span>
-      <time style="float: right;">10-06</time>
-    </a>
-  
-    
-    <a href="/2021/09/22/reactor-model-and-netty-getting-start/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">网络编程 — Reactor模型与Netty入门</span>
-      <time style="float: right;">09-22</time>
-    </a>
-  
-    
-    <a href="/2021/09/15/socket-and-io/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">网络编程 — Socket编程与IO模型</span>
-      <time style="float: right;">09-15</time>
-    </a>
-  
-    
-    <a href="/2021/09/04/network-basic-2/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">网络基础 — 深入理解TCP协议</span>
-      <time style="float: right;">09-04</time>
-    </a>
-  
-    
-    <a href="/2021/09/04/network-basic-1/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">网络基础 — 网络模型与网络协议</span>
-      <time style="float: right;">09-04</time>
-    </a>
-  
-    
-    <a href="/2021/08/02/icebreaker-of-JIT/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">JVM 进阶 — 即时编译入门</span>
-      <time style="float: right;">08-02</time>
-    </a>
-  
-    
-    <a href="/2021/07/25/gclog-and-optimize/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">JVM GC篇 — 日志解读与GC调优</span>
-      <time style="float: right;">07-25</time>
-    </a>
-  
-</div>
+    <article class="col-12 col-md-8 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2021/03/07/100w-data-insert/">100w数据插入实现与思考</a>
+      </h1>
+
+      <p class="index-excerpt">
+        <a href="/2021/03/07/100w-data-insert/">
+          
+          
+            
+          
+          前言这是学习中遇到的一个题目，往一个表中插入100w条数据，看到这个题目的时候人是懵逼的。因为目前公司线上最大的表记录不过100w出头，每次做数据清洗或者数据迁移的时候一个通宵都不一定能跑完，那么插入100w 又怎么会快的起来呢？更何况老师问是否能把性能优化到 10s 之内呢。。
+思维爆炸只要思想不滑坡，办法总比方法多。老师既然问了那这个问题肯定是有解的，如果脑暴分析下可以得到下面的一些信息线索。
+        </a>
+      </p>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2021-03-07 23:12" pubdate>
+              2021-03-07
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/%E9%9A%8F%E7%AC%94%E8%AE%B0/">随笔记</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/mysql/">mysql</a>
+            
+              <a href="/tags/jdbc/">jdbc</a>
+            
+              <a href="/tags/%E5%AE%9E%E6%93%8D/">实操</a>
+            
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
 
 
   <nav aria-label="navigation">
     <span class="pagination" id="pagination">
-      <span class="page-number current">1</span><a class="page-number" href="/archives/2021/page/2/#board">2</a><a class="page-number" href="/archives/2021/page/3/#board">3</a><a class="extend next" rel="next" href="/archives/2021/page/2/#board"><i class="iconfont icon-arrowright"></i></a>
+      <a class="extend prev" rel="prev" href="/page/2/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/#board">2</a><span class="page-number current">3</span>
     </span>
   </nav>
-
 
 
 
