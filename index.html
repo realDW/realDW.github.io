@@ -182,6 +182,66 @@
     
     
       <div class="col-12 col-md-4 m-auto index-img">
+        <a href="/2022/02/17/netty-source-code-start-server/" target="_self">
+          <img src="https://gitee.com/realDaiwei/img/raw/master/long-ltiga-nguyen-xWUDffh6z3M-unsplash.jpg" srcset="/img/loading.gif" alt="Netty流程剖析 — 服务启动源码剖析">
+        </a>
+      </div>
+    
+    <article class="col-12 col-md-8 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2022/02/17/netty-source-code-start-server/">Netty流程剖析 — 服务启动源码剖析</a>
+      </h1>
+
+      <p class="index-excerpt">
+        <a href="/2022/02/17/netty-source-code-start-server/">
+          
+          
+            
+          
+          前言前面几个小节，我们梳理了几个核心组建，深入的分析了这几个组建的工作原理和一些实现细节，但是细看局部总是难以获得一个全局的视角，很难把它们真正的串起来。在梳理完这几个组件之后，我最想知道的就是启动的时候和读写操作的时候，这几个组件是怎么配合工作。虽然我也看过一切流程图，和一些简单的总结，但是自己没有深入过源码总感觉缺了点什么。我相信只有真正分析调试过源码才能真正理解，各个组件之间是怎么协作的，各
+        </a>
+      </p>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-02-17 23:44" pubdate>
+              2022-02-17
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/NIO%E4%B8%8E%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/">NIO与网络编程</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Java%E7%9F%A5%E8%AF%86%E7%BB%93%E6%9E%84%E6%A2%B3%E7%90%86/">Java知识结构梳理</a>
+            
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">学习总结</a>
+            
+              <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a>
+            
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">源码剖析</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+      <div class="col-12 col-md-4 m-auto index-img">
         <a href="/2021/12/25/netty-source-code-bytebuf/" target="_self">
           <img src="https://gitee.com/realDaiwei/img/raw/master/jake-davies-AXZlLCymxQ4-unsplash.jpg" srcset="/img/loading.gif" alt="Netty核心组件源码剖析 — ByteBuf">
         </a>
@@ -679,64 +739,6 @@
             <i class="iconfont icon-date"></i>
             <time datetime="2021-08-02 00:47" pubdate>
               2021-08-02
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-category"></i>
-            
-              <a href="/categories/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">Java虚拟机</a>
-            
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/JVM/">JVM</a>
-            
-              <a href="/tags/Java%E7%9F%A5%E8%AF%86%E7%BB%93%E6%9E%84%E6%A2%B3%E7%90%86/">Java知识结构梳理</a>
-            
-              <a href="/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">学习总结</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-      <div class="col-12 col-md-4 m-auto index-img">
-        <a href="/2021/07/25/gclog-and-optimize/" target="_self">
-          <img src="https://gitee.com/realDaiwei/img/raw/master/intricate-explorer-Z8JvqbNfgew-unsplash.jpg" srcset="/img/loading.gif" alt="JVM GC篇 — 日志解读与GC调优">
-        </a>
-      </div>
-    
-    <article class="col-12 col-md-8 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2021/07/25/gclog-and-optimize/">JVM GC篇 — 日志解读与GC调优</a>
-      </h1>
-
-      <p class="index-excerpt">
-        <a href="/2021/07/25/gclog-and-optimize/">
-          
-          
-            
-          
-          前言前面一小节我们简单深入的梳理了垃圾收集器，梳理理解了各个垃圾收集器的原理和回收流程。其中主要的垃圾收集器可以分为“经典垃圾收集器”和“低延迟垃圾收集器”，其中经典垃圾收集器是以Parallel、CMS、G1为首在生产环境经过千万次历练的垃圾收集器。低延迟垃圾收集器们则是最新还处于实验状态的 shenandoah 和 ZGC，这一代的设计目标是在超大堆下依旧能能实现高吞吐低延迟的垃圾收集。但是就
-        </a>
-      </p>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-07-25 17:38" pubdate>
-              2021-07-25
             </time>
           </div>
         
