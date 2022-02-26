@@ -182,6 +182,66 @@
     
     
       <div class="col-12 col-md-4 m-auto index-img">
+        <a href="/2022/02/24/netty-source-code-io/" target="_self">
+          <img src="https://gitee.com/realDaiwei/img/raw/master/ric-matkowski-B3ynbOgN0cM-unsplash.jpg" srcset="/img/loading.gif" alt="Netty流程剖析 — I/O就绪操作源码剖析">
+        </a>
+      </div>
+    
+    <article class="col-12 col-md-8 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2022/02/24/netty-source-code-io/">Netty流程剖析 — I/O就绪操作源码剖析</a>
+      </h1>
+
+      <p class="index-excerpt">
+        <a href="/2022/02/24/netty-source-code-io/">
+          
+          
+            
+          
+          前言前面一篇我们梳理了Netty服务的启动流程，这一小节，我们开始分析I/O就绪操作，I/O就绪操作大致可以划分为三个大的部分，第一个部分是OP_ACCEPT操作，这个部分我们接着上一小节继续分析，当服务启动之后，客户端向服务端发起连接，服务端是怎么如果处理连接，并且设置监听OP_READ。第二个部分也就是OP_READ操作的上半部分，随着客户端通过建立的连接通道发送数据到服务端，服务端又是怎么接
+        </a>
+      </p>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-02-24 22:00" pubdate>
+              2022-02-24
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/NIO%E4%B8%8E%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/">NIO与网络编程</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Java%E7%9F%A5%E8%AF%86%E7%BB%93%E6%9E%84%E6%A2%B3%E7%90%86/">Java知识结构梳理</a>
+            
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">学习总结</a>
+            
+              <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a>
+            
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">源码剖析</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+      <div class="col-12 col-md-4 m-auto index-img">
         <a href="/2022/02/17/netty-source-code-start-server/" target="_self">
           <img src="https://gitee.com/realDaiwei/img/raw/master/long-ltiga-nguyen-xWUDffh6z3M-unsplash.jpg" srcset="/img/loading.gif" alt="Netty流程剖析 — 服务启动源码剖析">
         </a>
@@ -701,64 +761,6 @@
               <a href="/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">学习总结</a>
             
               <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-      <div class="col-12 col-md-4 m-auto index-img">
-        <a href="/2021/08/02/icebreaker-of-JIT/" target="_self">
-          <img src="https://gitee.com/realDaiwei/img/raw/master/raimond-klavins-0OPixSJ22fg-unsplash.jpg" srcset="/img/loading.gif" alt="JVM 进阶 — 即时编译入门">
-        </a>
-      </div>
-    
-    <article class="col-12 col-md-8 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2021/08/02/icebreaker-of-JIT/">JVM 进阶 — 即时编译入门</a>
-      </h1>
-
-      <p class="index-excerpt">
-        <a href="/2021/08/02/icebreaker-of-JIT/">
-          
-          
-            
-          
-          前言我们都知道Java是一个跨平台的语言，他的跨平台和C++的源码跨平台不同，Java是字节码跨平台，即Java编译器把Java源代码编译成 .class 的二进制文件，将.class文件部署到不同的JVM实例上解释执行。这种解释执行的方式显然没有直接机器码执行效率来的高。因此Java为了获取更高的执行效率，通过将热点代码编译成机器码，并存储起来反复执行来优化执行效率，那即时编译(JIT)是怎么工
-        </a>
-      </p>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-08-02 00:47" pubdate>
-              2021-08-02
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-category"></i>
-            
-              <a href="/categories/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">Java虚拟机</a>
-            
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/JVM/">JVM</a>
-            
-              <a href="/tags/Java%E7%9F%A5%E8%AF%86%E7%BB%93%E6%9E%84%E6%A2%B3%E7%90%86/">Java知识结构梳理</a>
-            
-              <a href="/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">学习总结</a>
             
           </div>
         
