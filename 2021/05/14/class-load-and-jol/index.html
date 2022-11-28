@@ -160,7 +160,7 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('https://gitee.com/realDaiwei/img/raw/master/samuel-mcgarrigle-5ReuZSdtDC4-unsplash.jpg') no-repeat center center;
+         style="background: url('https://raw.githubusercontent.com/realDaiwei/image/master/samuel-mcgarrigle-5ReuZSdtDC4-unsplash.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -232,7 +232,7 @@
             <div class="markdown-body">
               <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在前面一篇中提到了方法的调用，方法在类加载阶段会由符号引用替换实际引用或者方法表的索引。Java 的类加载机制又是怎么样的呢？这里聊一个小插曲，我记得我刚毕业那会去面中兴，基础的问题都回答的挺好的但是最后面试官问了我这个问题，Java 虚拟机是怎么加载一个类的？我当时脑子懵了，对象怎么加载到内存？对象是 new 出来的的啊，还要加载？我也对这块不太了解，然后面试官也就没深了问。但是现在看来，如果是进阶 Java 的话这是一个基础不能在基础的问题了。类加载了这还不算完，Java 的类是怎么保存的，我相信很多朋友会回答存放在堆里，那其他特殊的类型呢 例如 String 类型又是怎么存储的呢？我们在内存溢出的时候，对象怎么就把我们的堆给堆满了，每个对象占了多大的空间呢？请朋友们慢慢往下看。</p>
 <h2 id="类加载机制"><a href="#类加载机制" class="headerlink" title="类加载机制"></a>类加载机制</h2><p>想要知道一处的细节不如先鸟瞰全局，先了解类的声明周期是什么样的先有个大体的概念。在了解的类的声明周期之后才能更好的理解 JVM 是如何加载一个类的</p>
-<h3 id="类的生命周期"><a href="#类的生命周期" class="headerlink" title="类的生命周期"></a>类的生命周期</h3><p><img src="https://gitee.com/realDaiwei/img/raw/master/20210511003453.png" srcset="/img/loading.gif"></p>
+<h3 id="类的生命周期"><a href="#类的生命周期" class="headerlink" title="类的生命周期"></a>类的生命周期</h3><p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210511003453.png" srcset="/img/loading.gif"></p>
 <p>上面这张图是非常经典的一张图，类的生命周期有7个步骤，分别是 <code>加载（Loading）</code>、 <code>验证（Verification）</code>、<code>准备（Preparation）</code>、<code>解析（Resolution）</code>、<code>初始化（Initialization）</code>、<code>使用（Using）</code>、<code>卸载（Unloading）</code>。其中前五个部分（加载、验证、准备、解析、初始化）统称为类加载。</p>
 <h4 id="加载"><a href="#加载" class="headerlink" title="加载"></a>加载</h4><p>加载阶段也称作”装载”阶段。这个阶段主要的操作是，更具明确知道的 class 完全限定名，来获取类的二进制的 .class 文件</p>
 <p>简单来说就是从文件系统/jar包中/或者网路中，任何地方存在的<code>class文件</code>，如果没找到会抛出 <code>NoClassDefFound</code> 错误。加载阶段不会检查 classfile 的格式和语法问题，只是单纯的加载文件。类加载的整个阶段由 JVM 和类加载器（某一个）共同协作完成。</p>
@@ -269,7 +269,7 @@
 <li><code>应用类加载器</code>（AppClassLoader）</li>
 </ul>
 <p>一般启动类加载器是由 JVM 内部实现的，在 Java 的 API 里面是无法拿到了，是用 C++ 实现的，后面两种在 Oracle Hotspot JVM 中，都在 sun.misc.Lanucher 定义的，扩展类加载器和应用类加载器一般都继承自 <code>URLClassLoader</code> 类，这个类也默实现了从不同的源来加载 class 字节码换成的 Class 的方法。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210512000947.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210512000947.png" srcset="/img/loading.gif"></p>
 <ol>
 <li>启动类加载器（bootstrap class loader）：它用来加载 Java 的核心类，用原生的 C++ 实现并不继承自 java.lang.Classloader。负责加载 JDK 中 <code>jre/lib/rt.jar</code> 中的所有 class。可以把它看作是 JVM 自带的，同时我们也无法获取它的引用。</li>
 <li>扩展类加载器（extensions class loader）：它用来加载 <code>lib/ext</code> 或者由系统路径 <code>java.ext.dirs</code> 指定的目录中的 Jar 包中的类。</li>
@@ -295,7 +295,7 @@
 <p>打开冰箱 = 申请空间，放入大象 = 对象初始化， 关联引用 = 关上冰箱门 </p>
 </blockquote>
 <h3 id="对象在内存的布局"><a href="#对象在内存的布局" class="headerlink" title="对象在内存的布局"></a>对象在内存的布局</h3><p>我们现在创建好了一个对象，难道一个对象在堆中存的就真的是一堆变量数据就没有其他的东西吗？</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210513231532.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210513231532.png" srcset="/img/loading.gif"></p>
 <p>对象在内存的中并不只有实例的数据，而是包含三个部分，<code>对象头</code>、<code>实例数据</code>、<code>内存填充</code>。</p>
 <ul>
 <li>对象头：按照实例对象的不同，对象头也有不同，主要的就是包含<code>Mark word</code>，<code>class pointer</code>，数组对象还包括数组长度。MarkWord 里面包含有对象的哈希码，锁信息，GC 等信息。ClassPointer 这个很明显，这是一个指针指向方法区的 Class 对象 ，在数组实例中还要记录数组的长度，在 64 位的系统中markWord占<code>8</code>个字节，如果开启指针压缩，这个大小可以压缩到 <code>4</code>个字节，也就是如果不开启指针压缩的话，再加上 class pointer 4 个字节，实例对象头 12 个字节，数组对象头占 16 个字节，开启指针压缩后，实例对象 对象头8个字节，数组对象对象头 12 个字节。</li>
@@ -313,7 +313,7 @@
 <p>⚠️这里有个小知识点，Java 实例被 GC 之后，对象的 Hash 码会变码？那栈中的引用地址会变化吗？我们都知道 Java 对象的 Hash 码和对象地址有关系。如果一个对象被 GC 过后还存活的话，如果在 young 区，那地址大概率会发生变化，那Hash 码是不是也不一样呢？我们通过实验可以很容易验证这个问题，Hash 码不会发生变化，但是地址会发生变化，这是怎么做到的？来，抬头往上看，对象头中是不是有个哈希码信息。在第一次调用对象 hashCode 方法，就会把 hashCode 存在这里，后面的 hashCode 直接来这里取就好了。 </p>
 </blockquote>
 <p>整体的大致的对象存储布局就是酱婶儿的。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210513235300.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210513235300.png" srcset="/img/loading.gif"></p>
 <h3 id="JOL-实践"><a href="#JOL-实践" class="headerlink" title="JOL 实践"></a>JOL 实践</h3><p>什么是 JOL ？JOL （Java object layout）Java 对象内存布局，是 openjdk 给我们提供了一个工具包，可以用来获取对象的信息和虚拟机的信息 。我们来引入下 jol-core 的依赖。</p>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>  <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.openjdk.jol<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>  <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>jol-core<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>  <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>0.15<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
 

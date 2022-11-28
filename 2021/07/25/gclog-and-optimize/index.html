@@ -160,7 +160,7 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('https://gitee.com/realDaiwei/img/raw/master/justin-heap-RrUItyCYrVM-unsplash.jpg') no-repeat center center;
+         style="background: url('https://raw.githubusercontent.com/realDaiwei/image/master/justin-heap-RrUItyCYrVM-unsplash.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -750,31 +750,31 @@
 <h4 id="GCViewer"><a href="#GCViewer" class="headerlink" title="GCViewer"></a>GCViewer</h4><p>GCViewer 是一个开源工具的GC日志分析工具。项目在 GitHub 主页各项指标进行了完整的描述。下面我们介绍一些常用指标。第一步获取GC日志文件，并且使用以下命令打开 GCViewer，并且得到下面的界面。</p>
 <figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm"><span class="hljs-keyword">java </span>-<span class="hljs-keyword">jar </span>gcviewer<span class="hljs-number">-1</span>.<span class="hljs-number">36</span>.<span class="hljs-keyword">jar </span>gc.log<br></code></pre></td></tr></table></figure>
 
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210707002631.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210707002631.png" srcset="/img/loading.gif"></p>
 <p>如果不想打开界面，我们也可以使用下面的命令将GC数据导出到 summary.cvs 和 chart.png 中</p>
 <figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">java -jar gcviewer-<span class="hljs-number">1.36</span><span class="hljs-selector-class">.jar</span> gc<span class="hljs-selector-class">.log</span> <span class="hljs-selector-tag">summary</span><span class="hljs-selector-class">.csv</span> chart.png<br></code></pre></td></tr></table></figure>
 
 <p>我们一起来简单看下分析下GCViewer输出的数据，我们先从左侧的第一个tab页图表（Chart）开始。GCViewer使用折线向我们展示了内存空间以及垃圾收集器的工作情况。其中黑色的线代表的是<code>FullGC</code>，深紫色的线表示堆空间的使用，绿色的线表示<code>GC时间</code>。图中两种颜色对应的区域，其中黄色的代表年轻代，紫色代表老年代。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210707004548.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210707004548.png" srcset="/img/loading.gif"></p>
 <p>第二个tab页面是事件详情（Event details）其中记录了GC暂停事件（GC pauses）、FullGC暂停事件（Full gc pauses）和并发GC其中在GC暂停事件中，我们能看到这些GC事件的<code>名称（name）</code>、<code>次数（n）</code>、<code>最小值（min）</code>、<code>最大值（max）</code>、<code>平均值（avg）</code>、<code>标准差（stddev）</code>、<code>总时间（sum(s)）</code>、<code>分项总时间占比（sum(%)）</code>。我们可以看到GC暂停（GC pauses）记录的是YoungGC的暂停时间，而FullGC暂停（Full GC pauses）记录了两类暂停，一类是分配失败的FullGC（Allocation Failure），另一类是自适应（Ergonomics）产生的FullGC。其中我们不难发现绝大多数大部分的FullGC是由自适应调整带来的FullGC。我们测试的是 ParallelGC ，GC时会全程暂停应用线程，因此没有并发GC的数据。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210707234907.png" srcset="/img/loading.gif"><br>最后一个tab 语法分析程序（Parser）这个部分是一个类似日志输出的窗口，但输出的信息是GCViewer版本，JVM版本，内存大小，执行参数等信息。右侧我们有同样也有三个tab页，这里详细的收集记录了JVM这段时间内的堆空间信息，和GC暂停信息。第一个tab页是一个汇总（summary)信息，其中堆空间的使用情况，总暂停时间，总暂停次数、吞吐量等常用的统计数据一目了然。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210708000947.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210707234907.png" srcset="/img/loading.gif"><br>最后一个tab 语法分析程序（Parser）这个部分是一个类似日志输出的窗口，但输出的信息是GCViewer版本，JVM版本，内存大小，执行参数等信息。右侧我们有同样也有三个tab页，这里详细的收集记录了JVM这段时间内的堆空间信息，和GC暂停信息。第一个tab页是一个汇总（summary)信息，其中堆空间的使用情况，总暂停时间，总暂停次数、吞吐量等常用的统计数据一目了然。</p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210708000947.png" srcset="/img/loading.gif"></p>
 <p>第二个tab页是内存有关信息（Memory），这里包括各个分代内存的使用情况、GC后的内存释放信息和对西那个的晋升速率的信息，可以帮助我们有效的分析堆空间中对象的存活与回收情况。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210725173205.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210725173205.png" srcset="/img/loading.gif"></p>
 <p>最后一个tab页是暂停有关信息（pause）从总暂停、FullGC暂停、GC暂停这三个纬度统计了GC的最大、最小和平均暂停时间、GC间隔时间的数据，这些数据可以帮助我们全面分析GC的暂停情况。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210708001650.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210708001650.png" srcset="/img/loading.gif"></p>
 <p>以上就是GCViewer对一次GC日志的分析结果，GCViewer通过GC日志对GC的内存和暂停进行了充分的分析，数据分析地非常全面。但如果要说缺点的话，GCViewer的UI设计还有很大的提升空间。</p>
 <h4 id="GCEasy"><a href="#GCEasy" class="headerlink" title="GCEasy"></a>GCEasy</h4><p>GCEasy在前面的文章中我们做过简单的介绍，今天介绍GC的分析结果。通过GCEasy输出的图表数据，帮助大家快速有效的分析GC日志。第一个图表是JVM的内存概览图，左侧是图表包括分配内存量，和内存最大值，右侧是数据的柱状图。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210708231952.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210708231952.png" srcset="/img/loading.gif"></p>
 <p>第二个图表是关键性能指标（Key Performance Indicators），其中主要记录的指标是吞吐量和GC暂停的图表数据。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210708232336.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210708232336.png" srcset="/img/loading.gif"></p>
 <p>第三张图是交互图表（Interactive Graphs），其中<code>Heap after GC</code>表示GC后的堆空间大小，<code>Heap before GC</code>表示GC前的堆空间大小，</p>
 <p><code>GC Duration</code>是GC的持续时间，<code>Reclaimed Bytes</code>表示GC后回收的字节大小，<code>Young Gen</code>表示young区的内存使用情况，同理<code>Old Gen</code>表示老年代的内存使用情况，<code>Meta Space</code> 表示Meta区的内存使用情况最后一个<code>A &amp; P</code>表示对象从新生代晋升到老年代的晋升速率。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210708232943.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210708232943.png" srcset="/img/loading.gif"></p>
 <p>第四张图表是GC的统计数据（GC Statistics），按照各个不同的纬度统计GC的数据，可以帮助我们从各个角度详细的分析GC。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210708234008.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210708234008.png" srcset="/img/loading.gif"></p>
 <p>最后的两张图是对象统计（Object Stats）和 GC产生原因（GC Causes）分析，其中对象统计计算了对象创建数量和对象晋升的数据。而GC产生原因分析造成GC的原因以及相关的一些GC产生时的一些数据统计。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210708234450.png" srcset="/img/loading.gif"><img src="https://gitee.com/realDaiwei/img/raw/master/20210708234435.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210708234450.png" srcset="/img/loading.gif"><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210708234435.png" srcset="/img/loading.gif"></p>
 <p>以上就是GCEasy对“普通”用户上传的GC日志进行分析的结果，如果想要获得更多的数据可以进行充值，但是这么多纬度和这么数据分析足以让我们完成GC问题定位和GC调优目标达成判定。相较于GCViewer，GCEasy的图表更加丰富，结果展示更加直观，并且不用额外下载软件。如果遇到此类需求，我更倾向使用GCEasy🙈。</p>
 <h3 id="GC调优实战"><a href="#GC调优实战" class="headerlink" title="GC调优实战"></a>GC调优实战</h3><p>这一小节我们介绍导致性能问题的典型情况，这些示例都是来自于生产环境，为演示做了一定长度的精简。</p>
 <blockquote>
@@ -907,7 +907,7 @@
 </tbody></table>
 <p>乍一看似乎不是过早提升的问题。事实上，在每次GC之后老年代的使用率似乎在减少。但反过来想，要是没有对象提升或提升率很小，也就不会看到那么多的FullGC了。简单解释一下这里的GC行为：有<strong>很多对象提升到老年代，同时老年代中也有很多对象被回收了，这就是造成了老年代使用量减少的假性，但事实是大量的对象不断地被提升到老年代，并触发 fullGC。</strong></p>
 <h5 id="提升速率的意义"><a href="#提升速率的意义" class="headerlink" title="提升速率的意义"></a>提升速率的意义</h5><p>和分配速率一样，提升速率也会影响GC暂停的频率。但是分配速率主要影响 MinorGC，而提升速率则直接影响 Major GC的频率。有大量的对象提升，自然很快将老年代塞满，老年代填充的越快，则Major GC事件的频率也就越高。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210723234555.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210723234555.png" srcset="/img/loading.gif"></p>
 <p>此前我们介绍过，fullGC 通常需要更多的时间，因为需要处理更多的对象，还需要执行碎片整理等额外的复杂过程。通常过早提升的症状表现为以下的形式：</p>
 <ul>
 <li><strong>短时间内频繁地执行FullGC。</strong></li>

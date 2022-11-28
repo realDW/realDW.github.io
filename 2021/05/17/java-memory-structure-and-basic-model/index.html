@@ -160,7 +160,7 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('https://gitee.com/realDaiwei/img/raw/master/jorge-gardner-jY6PNtt4jRI-unsplash.jpg') no-repeat center center;
+         style="background: url('https://raw.githubusercontent.com/realDaiwei/image/master/jorge-gardner-jY6PNtt4jRI-unsplash.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -233,14 +233,14 @@
               <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在前面的小节中，总结梳理了 JVM 底层的一些基础的东西，包括 JVM 字节码技术，方法的调用，反射，异常等方法流程，基础的最后一部分梳理了类加载机制和对象的内存布局。有了这一套机制 JVM 能够顺利的读取Java文件，并行执行逻辑。看起来都有了，但是少了一个重要的部分没错，就是内存。这计算机的内存这个部分来的像理所当然一样。其实最原始的计算机是没有内存这个概念的，后来冯诺依曼提出了冯诺依曼结构，冯诺依曼确定了计算机的结构，即确定了计算机的 5 大部件，即<code>运算器</code>、<code>控制器</code>、<code>存储器</code>、<code>输入设备</code>和<code>输出设备</code>。现代计算机的都是遵循冯诺依曼结构的，因此又称为冯诺依曼机。所以作为虚拟机怎么能没有内存呢？Java 内存模型规定了 JVM 应该如何使用计算机内存（RAM）。广义上来讲，Java内存模型分别为两个部分 <code>JVM内存结构</code> 和 <code>JMM与线程规范</code>。</p>
 <h2 id="JVM-内存结构"><a href="#JVM-内存结构" class="headerlink" title="JVM 内存结构"></a>JVM 内存结构</h2><p>JVM 内存结构是 JVM 的底层的实现，它决定了运行时数据的数据区划分。那么如果让你结合我们前面的知识设计一个 JVM 结构模型，你会怎么做呢？</p>
 <h3 id="动手设计一个-JVM-内存结构"><a href="#动手设计一个-JVM-内存结构" class="headerlink" title="动手设计一个 JVM 内存结构"></a>动手设计一个 JVM 内存结构</h3><p>从我们前面梳理的 JVM 方法调用小节中，我们知道方法调用会用到栈，每个正在运行的线程都有自己的线程栈，线程每调用一个方法都会创建一个栈帧。在类加载那一小节我们知道了对象实例存在堆上，然后通过一个存在栈上的引用指向堆中的实例对象的地址。所以我们还需要一个堆空间。所以内存空间我们可以简单划分为栈（stack） + 堆（heap） 的结构（1.0 版本）。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210515190729.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210515190729.png" srcset="/img/loading.gif"></p>
 <p>线程栈上是有数据的，包括一些局部方法内部的基础类型变量和一些对象的引用指向堆中实例地址。上面这个图太过于粗略了我们加入一点点细节。就像下图酱紫，每个栈有局部变量和对象引用，对象的引用地址指向堆中。（2.0 版本）</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210515192514.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210515192514.png" srcset="/img/loading.gif"></p>
 <p>结合下我们之前梳理的类初始化和实例对象有关内存的部分再次简单过一遍。类加载器加载类并且解析成字节码，字节码中会有会有流程控制方法字节码和常量池等信息。其中方法名和类名都会先用常量代替，然后在类加载的解析阶段替换成引用。最后实例对象的时候，会根据类的 class 的常量信息在堆中创建一个实例对象。实例对象主要有三个部分对象头、实例数据、填充数据。这里面对象头里面又有一个 markWord 和 classPointer，classPointer 指向方法区中实例的 class 对象。这一路梳理下来不难发现，我们少了一个常量池和一个方法区。我们再加入一点点细节。（3.0 版本）</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210515195133.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210515195133.png" srcset="/img/loading.gif"></p>
 <p>结合之前的知识我设计的一个简单的 JVM 内存结构就出来了，大家可以按照自己的理解动手设计一个内存结构，一定会有不一样的收获。 </p>
 <h3 id="JVM-内存结构概述"><a href="#JVM-内存结构概述" class="headerlink" title="JVM 内存结构概述"></a>JVM 内存结构概述</h3><p> 前面是结合 JVM 的字节码类加载等机制构想设计出来的 JVM 内存，真正的 JVM 内存可能不长这个样子，那真正的 JVM 内存结构长什么样子呢？因为我在之前还是有接触过一些 JVM 内存结构这块的知识，之前的知识已经给我的设计打下一个大致的方向了，所以我画出来的 JVM 的基本逻辑结构和我们设计的大体的方向上还是一致的。JVM 内存结构逻辑上大体分为：线程栈（stack）和 堆内存（heap）两个部分。也就是 1.0 版本一致。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210515190729.png" srcset="/img/loading.gif" alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210515190729.png" srcset="/img/loading.gif" alt="image.png"></p>
 <p>JVM 中，真在运行的每个线程都有自己的线程栈。线程栈上包含正在执行的方法链/调用链上的所有方法的状态信息。所有线程栈又被成为<code>方法栈</code>或<code>调用栈</code>（call stack）。线程在执行代码的时候，调用栈中的信息会一直变换。我们抛出异常时打印出的堆栈信息也就是这个方法调用栈。</p>
 <p>线程栈上保存了调用链上的正在执行的所有方法的局部变量。</p>
 <ul>
@@ -263,14 +263,14 @@
 <li>如果两个线程能同时调用同一个方法，则它们它们都可以访问到这个对象的成员变量，但每个线程的局部变量副本都是独立的。（方法传入同一对象，只要是同一引用就都能看见。）</li>
 </ul>
 <p>把上面这些东西落实到图上就是我们的 2.0 版本。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210515192514.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210515192514.png" srcset="/img/loading.gif"></p>
 <blockquote>
 <p>简单小总结下：虽然各个线程自己使用的局部变量都在自己的线程栈上，但是大家可以共享堆上的对象。如果不同线程访问同一个对象实例的基础类型的成员变量，并往自己的线程栈上赋值，实例对象会给线程一个变量副本。</p>
 </blockquote>
 <h3 id="栈内存结构"><a href="#栈内存结构" class="headerlink" title="栈内存结构"></a>栈内存结构</h3><p>前面我们自己尝试设计的栈结构非常的简单，就是一个简单栈的数据结构，实际上并不完全是这样。结合前面方法调用部分的知识，栈的逻辑区域里应该有很多的线程栈，毕竟一个线程就会创建一个线程栈（调用 JNI 方法会使用 Native 栈）。而且线程栈里面应该也会有很多的栈帧，因为我们知道每调用一个方法就会创建一个栈帧，就类似下面这样的一个结构。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210516153009.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210516153009.png" srcset="/img/loading.gif"></p>
 <p>我们知道调用方法就会创建栈帧，栈帧里面有<code>操作数栈</code>，<code>局部变量表</code>和一个<code>class/method引用</code>，有了这些还不够这些只能保证方法的顺利执行，方法执行之后还要返回。所以还有一个<code>返回地址</code>。所以栈帧内部的图大致是这样的。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210516154106.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210516154106.png" srcset="/img/loading.gif"></p>
 <h3 id="堆内存的结构"><a href="#堆内存的结构" class="headerlink" title="堆内存的结构"></a>堆内存的结构</h3><p>在上面的线程的分析图中，我们可以看到在 JVM 进程里面有堆内存和非堆内存，这个非堆又是什么呢？别着急我们慢慢往下看。在前面的概述介绍堆的时候说堆是对所有线程共享的内存区域。大家都知道我们 JVM 是会自动GC的，不会在被引用或者说死掉的对象会被回收，但是所有的对象他们呢生命周期都是一样的吗？会不会存在一些永远不会被回收的对象呢？答案是存在的。在前面的类加载的小节中我们说过，JVM 会把类加载进内存，会创建 Class 对象并且会保存类常量池中的常量。如果我们这部分的数据被 GC 了，那我们遇到所有的需要加载类的场景又将重新加载。这将极大影响 JVM 整体的性能。所以这里的堆也被称为：GC 管理的堆（GC Heap）。如果堆和栈的逻辑划分是建立在线程是否可以共享的纬度逻辑上，那么堆和非堆的逻辑划分就是建立实例对象生命周期的纬度上的。</p>
 <p>为了最高化的提高 GC 的效率，堆也划分除了新生代和老年代的概念，就像这个字面意思一样，新生代都是新创建的对象，这些对象在新生代经历几次GC，如果他们还活着那么它们将进入老年代。但这也不绝对，在某些特定的场景下新创建的对象会直接进入老年代。</p>
 <p>非堆本质上还是堆，但是一般不归 GC 管理。里面大致划分为3个内存池。</p>
@@ -280,7 +280,7 @@
 <li><code>Code Cache</code>, 存放 JIT 编译器编译后的本地机器代码。 </li>
 </ul>
 <h3 id="其他部分和鸟瞰-JVM-内存"><a href="#其他部分和鸟瞰-JVM-内存" class="headerlink" title="其他部分和鸟瞰 JVM 内存"></a>其他部分和鸟瞰 JVM 内存</h3><p>除了栈和堆 JVM 还有一个 <code>PC 计数器</code> 这个计数器类似于 CPU 的寄存器，<code>用于记录下一条指令的位置</code>。在早期的CPU 都是单核的，那如果实现多线程呢？没错，使用切换执行上下文的方式 。所以 PC 计数器记录的就是当前线程执行的位置，让 CPU 切换回来的时候能继续执行下去。还有一个部分就是直接内存。直接内存不是运行时数据的一部分，也不是《Java内存规范》中定义的一部分，它是 JVM 直接向内存申请的空间。一般不会直接操作，但是在Netty中有相关的配置参数。结合上面所有的梳理的点，我们可以试着画出一个大致的 JVM 内存图了。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210516164240.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210516164240.png" srcset="/img/loading.gif"></p>
 <h3 id="内存溢出分析"><a href="#内存溢出分析" class="headerlink" title="内存溢出分析"></a>内存溢出分析</h3><p>Java 虽然有全自动的 GC，但是也不能避免内存溢出的问题。那如何解决内存溢出的问题，要想解决这个问题先要搞明白内存溢出是什么？内存溢出（OOM）指的是当程序需要的内存中存在过多无法回收的内存，最终使得<code>内存需要的空间大于系统能提供的最大空间</code>，这时候一般系统会抛出 OOM 异常。</p>
 <blockquote>
 <p>这个类似于很早之前我们内存很小的手机同时打开了很多的后台应用，这个时候你又打开了一个很吃内存的游戏，然后这个游戏突然闪退了。。。这个时候往往通过手动清理后台或者重启手机之后再次打开的方式解决。</p>
@@ -292,7 +292,7 @@
 <p>所以哪些 JVM 里面哪些区域会内存泄漏呢？在那些区域不会内存溢出呢？在《Java虚拟机规范》中只定义一个地方不会发生内存溢出。那就是 PC 计数器，因为 PC 记录器记录的就是当前线程执行的位置，所以 PC 计数器中只保存一个数。这个内存大小不会随着程序的执行而增加。每申请一个线程就会创建一个 PC 计数器。其他的内存区域随着空间的分配都可能存在 OOM。</p>
 <h2 id="JMM-内存模型介绍"><a href="#JMM-内存模型介绍" class="headerlink" title="JMM 内存模型介绍"></a>JMM 内存模型介绍</h2><h3 id="CPU-指令与乱序执行"><a href="#CPU-指令与乱序执行" class="headerlink" title="CPU 指令与乱序执行"></a>CPU 指令与乱序执行</h3><p>学计算机的都知道，基本上计算机的指令集分为两种，精简指令集和复杂指令集合，其中精简指令集是以 ARM 架构为主，现在的手机芯片和苹果的 m1 都是基于 ARM 架构的，其特点就是功耗低但是性能较弱，但是随着这几年的芯片技术的提升，ARM 架构芯片的性能也在逐步提高，例如苹果的M1芯片也可以吊打 Intel 的CPU。复杂指令集的代表就是 Intel 和 AMD 的 x86 架构的芯片，基于复杂指令集的特点就是功耗比较高，但是性能强。我们都知道 CPU 有很多的指令，实现一个操作有很多的方式，复杂指令集把这些操作封成一个复杂指令，而基于简单指令集的CPU把这个复杂操作拆分多个简单指令去完成。两者都可以完成这个操作，但是，就效率而言还是复杂指令集更高。</p>
 <p>不管是哪一种指令集，CPU 的流水线工作方式都是一致的。如果一个操作的所有的指令都放在一个流水线上，这样很多的流水线就是闲置的，所以聪明的开发者想到一个办法就是，只要保证最后的执行结果是正确的，乱序执行也没关系。所以CPU完全可以根据需要通过内部调度把这些指令打乱了执行，充分利用流水线资源，只要最终结果是等价的那么程序的正确性就没有问题。但这在如今多CPU内核的时代，随着复杂度的提升，并发执行的程序面临了很多问题。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210517004750.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210517004750.png" srcset="/img/loading.gif"></p>
 <h3 id="JMM-概述"><a href="#JMM-概述" class="headerlink" title="JMM 概述"></a>JMM 概述</h3><p>随着多核时代的到来和 JVM 多线程并发执行，JVM在不同环境下保证程序执行结果正确性变得越来越复杂。因此 JVM 推出一套 Java  内存模型来统一约束线程之间可见性等一系列规则，来保证最终执行结果的正确性。JMM规范明确定义了不同的线程之间，通过哪些方式，在什么时候可以看见其他线程保存到共享变量中的值；以及在必时如何对共享变量的访问进行同步。这样的好处是屏蔽各种硬件平台和操作系统之间的内存访问差异，实现了Java并发程序真正的跨平台。 其中并发中的很多的关键字包括 synchronzied，volatile 都是 JMM 定义的。这些内容我们将放到多线程实战部分进行梳理。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这一小节我们承接之前的学的关于Java运行时数据的一些知识，尝试动手设计一个简单的 Java 内存结构。Java 内存结构包括 堆、栈、PC 计数器，其中栈，每个线程都会创建一个线程栈，栈也分方法栈和 Native 栈，线程栈内又包括很多的栈帧用于存储当前线程方法调用的数据。堆的逻辑内存区也分堆和非堆，堆也称为 GC 管理的堆，因为堆是 GC 工作的区域，堆里面也分新生代和老年代。非堆中主要包括元数据区、Compressed class space 和 code cache ，其中元数据区域主要包括方法区和常量池，CCS 保存的 Class 信息，Code cache 存储 JIT 编译后的机器码。每一个线程都有自己的 PC 计数器，PC 计数器负责记录当前程序执行的位置，方便 CPU 进行上下文切换回来之后能跳到正确的位置继续执行。在这些区域中，除了了PC 计数器所有的内存区域都会发生内存溢出。最后我们简单过了下 JMM 也就是 Java 内存模型，JMM规范明确定义了不同的线程之间的可见性和访问同步，保证 JVM 在不同的环境下都能得到一致且正确的结果。具体的 JMM 的细节我们放在并发编程模块再来细细的梳理。加油，晚安！</p>
 <h2 id="学习资料"><a href="#学习资料" class="headerlink" title="学习资料"></a>学习资料</h2><ul>

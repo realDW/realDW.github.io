@@ -160,7 +160,7 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('https://gitee.com/realDaiwei/img/raw/master/LakePinatubo_ZH-CN5947011761_1920x1080.jpg') no-repeat center center;
+         style="background: url('https://raw.githubusercontent.com/realDaiwei/image/master/LakePinatubo_ZH-CN5947011761_1920x1080.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -309,9 +309,9 @@
 </ul>
 </blockquote>
 <h2 id="基础模型抽象"><a href="#基础模型抽象" class="headerlink" title="基础模型抽象"></a>基础模型抽象</h2><p>对于网络服务都有一个通用的处理结构即<code>read</code>、<code>decode</code>、<code>processService</code>、<code>encode</code>、<code>send</code>。当然他们内部的逻辑并不一样，例如对应不同的请求数据类型会有不一样的编解码形式，不同的业务逻辑也会有不一样的处理方式。但是他们处理流程的结构都是相通的。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210919113913.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210919113913.png" srcset="/img/loading.gif"></p>
 <p>正因为这第一层抽象，我们可以得到一个经典抽象结构，即一个客户端连接多个Service，一个Service对接多个Handler，并且每个Handler都有自己的线程。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210919123721.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210919123721.png" srcset="/img/loading.gif"></p>
 <p>这个结构就对应我们前面介绍的更多的连接中的<strong>多线程</strong>的解决方案。即每个连接都由一个handler快速处理。但是这样的结构也存在明显的弊端，就是扩展性不够。不能随着外部资源的提升增加性能，随着连接的增加Server连接越来越多的服务，整个负载受到Server连接数量的限制。对于Netty整个发展的过程我们可以有以下一些拓展思考。</p>
 <blockquote>
 <p>以下这些内容都是从Scalable in Java里面摘取出来的，是Reactor模型设计上的一些思考，我觉得对于一些结构上的设计非常具有启发意义，值得反复品。其中有一句话非常指的思考🤔。</p>
@@ -346,27 +346,27 @@
 </ul>
 </blockquote>
 <h2 id="事件驱动模型"><a href="#事件驱动模型" class="headerlink" title="事件驱动模型"></a>事件驱动模型</h2><p>上面我们提到了事件驱动。<strong>事件驱动就是基于事件触发拉起程序的执行</strong>。例如Java里面的AWT即Java桌面窗口程序，如果你写过JWT或者说是.net桌面应用程序，那肯定知道如果想要这些程序正常的执行一定将点击事件和一个处理器绑定，当用户点击某个button就会触发执行特定Handler。我们的web前端交互也是这样的，只不过这些操作前端帮我们处理了，然后前端直接触发对应的接口逻辑。整个过程如下图展示：</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210919154652.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210919154652.png" srcset="/img/loading.gif"></p>
 <p>事件驱动相较于其他的一些方式有更高的效率。<strong>通常来说一段逻辑的执行由某个事件触发。这意味着更少的资源消耗，并不需要对于每个客户端都用一个线程处理，线程资源可以池化公用</strong>，<strong>同时也会由更少的上下文切换和更少的锁</strong>。如果基于这样的设计就需要添加一个dispatcher，使用dispatcher将事件分派到对应的handler，但是dispatcher可能成为性能的瓶颈，因为每个连接都需要通过这里分派到对应的处理器处理，这个部分还需要开放事件和handler的绑定，可以在项目启动时或程序运行期间进行事件和handler的绑定。</p>
 <h2 id="Reactor单线程模型"><a href="#Reactor单线程模型" class="headerlink" title="Reactor单线程模型"></a>Reactor单线程模型</h2><p>我们的模型并没有直接采用这种模式而是使用了响应（Reactor）模式，也就是我们经常的提到的Netty的Reactor模型。Reactor和我们的响应式还是很相似的，首先是<strong>事件驱动，有一个或者多个并发输入源，有一个Service Handler和多个EventHandlers。这个Service Handler会同步的将输入的请求多路复用并分发给相应的EventHandler。</strong></p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210919172031.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210919172031.png" srcset="/img/loading.gif"></p>
 <p>上面这个版本是Reactor的单线程版本，一个客户端连接上acceptor后，然后分派给对应的Handler处理执行。但是一个连接连接上acceptor之后，所有的I/O操作都在一个线程上完成，此时线程职责包括：<strong>接收新连接请求、读写操作</strong>等。一个客户端连接上后，<strong>在处理完成send之前，acceptor都处于阻塞状态</strong>，这极大的影响了Reactor的整体性能。依据这个逻辑我们Netty构建出来的Reactor模型如下：</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210921105854.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210921105854.png" srcset="/img/loading.gif"></p>
 <p>Netty对于这种模式的编码实现：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java">EventLoopGroup eventGroup = <span class="hljs-keyword">new</span> NioEventLoopGroup(<span class="hljs-number">1</span>);<br>ServerBootstrap serverBootstrap = <span class="hljs-keyword">new</span> ServerBootstrap();<br>serverBootstrap.group(eventGroup);<br></code></pre></td></tr></table></figure>
 
 <h2 id="Reactor多线程模型"><a href="#Reactor多线程模型" class="headerlink" title="Reactor多线程模型"></a>Reactor多线程模型</h2><p>Reactor多线程模型和Reactor单线程模型的区别就在于<strong>处理连接的是一个线程，而处理具体业务逻辑是另外一组线程</strong>，这样的好处就是，<strong>一个连接acceptor同时可以处理多个连接事件</strong>。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210919194246.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210919194246.png" srcset="/img/loading.gif"></p>
 <p>Reactor多线程模型在绝大多数场景下都能满足性能需求。但是这个模型中，<strong>只有一个线程负责监听和处理所有的客户端连接</strong>。如果遇到连接风暴，一个线程是很有可能扛不住的。同时通过我们前面介绍过的TCP三次握手，一个连接的背后会有多次的握手交互，所以一个线程的Reactor的压力还是很大的。Netty的Reactor多线程模型如下：</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210921121722.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210921121722.png" srcset="/img/loading.gif"></p>
 <p>Netty对于Reactor多线程版本的实现：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java">EventLoopGroup eventGroup = <span class="hljs-keyword">new</span> NioEventLoopGroup();<br>ServerBootstrap serverBootstrap = <span class="hljs-keyword">new</span> ServerBootstrap();<br>serverBootstrap.group(eventGroup);<br></code></pre></td></tr></table></figure>
 
 <p><strong>在连接了很多的客户端的情况下，一个acceptor线程可能会成为整个系统的瓶颈。</strong>为了解决这个潜在的性能问题，又有了下面的第三种Reactor模型。</p>
 <h2 id="Reactor主从多线程模式"><a href="#Reactor主从多线程模式" class="headerlink" title="Reactor主从多线程模式"></a>Reactor主从多线程模式</h2><p>Reactor主从多线程模式的特点是，<strong>服务端处理客户端的连接不再是一个单独的线程，而是一个独立的线程池</strong>。acceptor接收到客户端TCP连接请求并处理完成后（这里的处理包括握手、认证等操作），一旦链路建立成功，就将链路注册到后端的 subReactor线程池I/O线程上，由I/O线程负责后续的操作。一下就是这个模型的示意图。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210920004557.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210920004557.png" srcset="/img/loading.gif"></p>
 <p>到此，我们的线程模型演变到最终的主从Reactor模式，分为两个Reactor，<strong>第一个Reactor处理连接有关的操作，而第二个Reactor负责处理业务有关的操作</strong>。当连接很多客户端时候，整个连接压力被均匀的分摊到mainReactor的多个线程上，再配合subReactor将业务处理分发到各个worker线程上，使得整个模型在比较高的负载下依旧有很高的性能表现。并且是可以通过提升机器性能来提升整体服务的性能，可根据实际需要来配置合适的性能范围。按照这个模型建立的Netty模型如下：</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210921124236.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210921124236.png" srcset="/img/loading.gif"></p>
 <p>Netty对上面主从的Reactor模式的实现如下：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java">EventLoopGroup bossGroup = <span class="hljs-keyword">new</span> NioEventLoopGroup();<br>EventLoopGroup workGroup = <span class="hljs-keyword">new</span> NioEventLoopGroup();<br>ServerBootstrap serverBootstrap = <span class="hljs-keyword">new</span> ServerBootstrap();<br>serverBootstrap.group(bossGroup, workerGroup);<br></code></pre></td></tr></table></figure>
 
@@ -395,7 +395,7 @@
 <li><p><strong>ChannelHandler</strong>：<strong>ChannelHandler 支持非常多的协议，并且提供用于数据处理的容器，ChannelHandler中的方法由特定的事件触发</strong>，常用的一个接口是<code>ChannelInboundHandler</code>，该类型主要方法入站读数据（socket读事件）。</p>
 </li>
 <li><p><strong>ChannelPipeline</strong>：<strong>ChannelPipeline提供了一个容器给ChannelHandler链并提供了一个API调用，用于管理沿着链入站和出站事件的流动</strong>。每个Channel都有自己的ChannelPipeline，当Channel创建时自动创建的。下图即可说明两者的关系。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210921211125.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210921211125.png" srcset="/img/loading.gif"></p>
 </li>
 <li><p><strong>ChannelFuture</strong>：<strong>Netty 所有的I/O操作都是异步的</strong>。因为一个操作可能无法立即返回，我们需要一种方法在以后获取他的结果，出于这个目的，Netty提供了接口<code>ChannelFuture</code>的<code>addListener</code>方法。</p>
 </li>
@@ -405,7 +405,7 @@
 <blockquote>
 <p>ServerSocketChannel，SocketChannel之间的关系和ServerSocket与Socket之间的关系类似。 </p>
 </blockquote>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210921223233.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210921223233.png" srcset="/img/loading.gif"></p>
 <p>整个工作描述如下：</p>
 <ol>
 <li>Netty抽象出两组线程池，<strong>BossGroup 专门负责接收客户端的连接，workerGroup 专门负责网络的读写</strong>。他们的类型都是NioEventLoopGroup。</li>

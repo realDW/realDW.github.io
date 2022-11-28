@@ -160,7 +160,7 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('https://gitee.com/realDaiwei/img/raw/master/sergey-pesterev-llGiAyYthDw-unsplash.jpg') no-repeat center center;
+         style="background: url('https://raw.githubusercontent.com/realDaiwei/image/master/sergey-pesterev-llGiAyYthDw-unsplash.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -243,7 +243,7 @@
 </li>
 </ol>
 </blockquote>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210813004056.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210813004056.png" srcset="/img/loading.gif"></p>
 <p>TCP/IP的五层分别为：<strong>应用层、传输层、网络层、数据链路层和物理层。</strong>前面我们提到TCP/IP五层结构是由一些交互性的模块做成的分层次的协议，那么他们每一层有哪些协议？以下列举了我们接触的比较多的网络协议。</p>
 <ul>
 <li><p>应用层：<code>HTTP</code>、<code>HTTPS</code>、<code>FTP</code>、<code>SMTP</code>、<code>Telnet</code>…</p>
@@ -329,9 +329,9 @@
 </tbody></table>
 <h1 id="一个数据包的奇幻之旅"><a href="#一个数据包的奇幻之旅" class="headerlink" title="一个数据包的奇幻之旅"></a>一个数据包的奇幻之旅</h1><p>我们上面介绍了网络模型，但是这些网络模型又和实际的传输有什么关系呢？当我们访问一个网站，背后的数据又是怎么进行传输的呢？我在读书的时候也都知道有网络协议，但是让我说一些传输的细节，我却很难答上来，这个部分我们简单介绍一个数据包的传输过程，建立起一个数据传输过程的基本认知。</p>
 <h2 id="封包与拆包"><a href="#封包与拆包" class="headerlink" title="封包与拆包"></a>封包与拆包</h2><p>在网络上传输的并不是直接的数据，而是一个个数据包。每个数据包经过发送端都会被带上一些特殊信息，这些特殊信息在到达中间或目标设备是会被读取，这些特殊信息就是协议头。<strong>数据包在发送端添加协议头的过程叫做封包</strong>，<strong>数据包在接收端被拆分读取分析的过程叫做拆包</strong>。如果我们传输的应用层使用的是HTTP协议，传输过程和封包拆包示例如下。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210830001441.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210830001441.png" srcset="/img/loading.gif"></p>
 <h2 id="MAC头与IP头"><a href="#MAC头与IP头" class="headerlink" title="MAC头与IP头"></a>MAC头与IP头</h2><p>如果我们要把一个数据包从一个网络设备发送到另一个网络设备，IP头必不可少，但是为了在到达目标局域网后快速找到目标接收端，我们的数据包还需要MAC头，IP头和MAC之间的关系类似于我们信封上的收件地址和收件人姓名。数据包有了这两个协议头，就可以通过网络从一端传输到另一端。以下是这两个协议头的细节图。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210830232718.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210830232718.png" srcset="/img/loading.gif"></p>
 <p>在MAC头里面，显示<strong>目标MAC地址</strong>，然后是<strong>源MAC地址</strong>，然后有一个协议类型，用来说明里面的IP协议类型。IP头里面的版本号，目前主流的还是IPv4。IP头里面还有个8位标识协议，这里指的是传输层协议类型，也就是TCP，还是UPD协议。这里最重要的是源IP地址和目标IP地址。（IP协议下面有详细介绍。）</p>
 <p>在数据包在网络上<strong>传输过程中，这个IP头和MAC头在有些时候并不是一尘不变的，随着网段的切换，这个IP头和MAC头也会切换。</strong>在任何一台机器上，当要访问另一个IP地址的时候，都先要判断目标IP地址和当前机器的IP地址，是否在同一个网段。</p>
 <ul>
@@ -342,7 +342,7 @@
 <p>网关是一个三层转发设备，往往是一个<strong>路由器、三层交换机或是防火墙。它是一个网段的入口也是出口</strong>，就很类似与我们现实生活中的海关，这个出口<strong>连接着多个网段</strong>。如果一个<strong>数据包传输过程中跨网段</strong>，网关<strong>匹配上</strong>IP地址和MAC地址之后，<strong>三层设备会读取数据包并根据目标IP地址</strong>，匹配转发的网段，匹配到之后，三层设备会<strong>重新给数据包打上下一个目标地址的IP头和MAC头</strong>直到跳到目标设备或在网络中被丢弃为止。</p>
 </blockquote>
 <h2 id="路由过程分析"><a href="#路由过程分析" class="headerlink" title="路由过程分析"></a>路由过程分析</h2><p>接下来我们通过分析在同一网段和在不同网段场景下，数据包在网络中的路由过程是怎样。在这个过程中数据包的IP头和MAC头又会发生哪些变化。</p>
-<h3 id="转发网关路由场景分析"><a href="#转发网关路由场景分析" class="headerlink" title="转发网关路由场景分析"></a>转发网关路由场景分析</h3><p><img src="https://gitee.com/realDaiwei/img/raw/master/20210904143156.png" srcset="/img/loading.gif"></p>
+<h3 id="转发网关路由场景分析"><a href="#转发网关路由场景分析" class="headerlink" title="转发网关路由场景分析"></a>转发网关路由场景分析</h3><p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210904143156.png" srcset="/img/loading.gif"></p>
 <p>上面这张图，我们可以发现服务器A要访问服务器B，其中左边的路由器为路由器A，右侧的路由器为路由器B。目标服务器<code>192.168.4.101/24</code>和源服务器<code>192.168.1.101/24</code>不在同一个网段，因而需要先把数据包发送给网关。其中网关已经配置好了为<code>192.168.1.1/24</code>，同时通过<code>ARP</code>获取网关的MAC地址 ，然后发送数据包。其中包中的MAC头和IP头信息如下。</p>
 <blockquote>
 <ul>
@@ -383,7 +383,7 @@
 </ul>
 </blockquote>
 <p>通过这个过程可以看出，每到一个新的局域网，<strong>MAC地址都是要变的，但是IP地址不变</strong>。在IP头里面，不会保存任何网关的IP地址，<strong>所谓下一跳，是要将目标IP转换为MAC地址放入MAC头，目标IP地址在整个过程过程中不会发生改变。</strong>这是转发网关的路由过程。</p>
-<h3 id="NAT网关路由场景分析"><a href="#NAT网关路由场景分析" class="headerlink" title="NAT网关路由场景分析"></a>NAT网关路由场景分析</h3><p><img src="https://gitee.com/realDaiwei/img/raw/master/20210904143249.png" srcset="/img/loading.gif"></p>
+<h3 id="NAT网关路由场景分析"><a href="#NAT网关路由场景分析" class="headerlink" title="NAT网关路由场景分析"></a>NAT网关路由场景分析</h3><p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210904143249.png" srcset="/img/loading.gif"></p>
 <p>这个场景和上面场景有一些不同，其中访问的源服务器A和目标的服务器B的IP地址是相同的。他们两个在不同的局域网中，这个场景很像我日常访问学校选课系统一样。服务器A是我们自己电脑，现在我们要访问学校的选课系统，选课系统部署在机房的局域网中，选课系统服务器B的IP地址为<code>192.168.1.101/24</code>，碰巧我们宿舍的电脑在宿舍这个局域网内也是<code>192.168.1.101/24</code>这个IP地址。<strong>它为了能对外提供服务，还需要一个外网地址</strong><code>192.168.56.2/24</code>。现在我们服务器A要向服务器B发送数据包，首先服务器A先从DNS解析获取服务器B域名对应的IP地址即<code>192.168.56.2/24</code>。这个地址不是和服务器A在一个局域网，所以我们将数据包发送给网关。数据包中的IP地址和MAC地址如下：</p>
 <blockquote>
 <ul>
@@ -437,11 +437,11 @@
 <h1 id="协议？你我之间的约定！"><a href="#协议？你我之间的约定！" class="headerlink" title="协议？你我之间的约定！"></a>协议？你我之间的约定！</h1><p>我刚开始接触到协议的时候，了解到什么TCP/IP协议，UDP协议各种各样的协议都有种不明觉厉的感觉。但是随着我深入的学习，编写自己的RPC的网络协议的时候，发现协议并没有想象中的那么神秘，协议只不过是收发端约定的规则而已，更像是我们写信中，大家约定的书信格式一样。没了协议双方网络能通么？当然是可以的，只不过我不知道你发的是什么信息了。因此我们这的协议是网络协议的简称，<strong>网络通信计算机双方必须共同遵循的一组约定</strong>，如怎样建立连接、怎么样互相识别等。只有遵守了这个约定，计算机之间才能互相通信交流。我们将从数据链路层自下向上依次梳理各个层代表协议。物理层过于物理，这里我们就不梳理了。</p>
 <h2 id="数据链路层"><a href="#数据链路层" class="headerlink" title="数据链路层"></a>数据链路层</h2><p>数据链路层也叫MAC层，MAC层的全程是<strong>Medium Access Control</strong>，即媒体访问控制。<strong>其实就是控制媒体上发数据的时候，谁先发、谁后发的问题。防止发生混乱，即多路访问</strong>。主要有以下三种协议：<strong>信道划分</strong>、<strong>轮流协议</strong>和<strong>随机接入协议</strong>。</p>
 <h3 id="ARP协议"><a href="#ARP协议" class="headerlink" title="ARP协议"></a>ARP协议</h3><p>ARP协议是一个工作在数据链路层的协议。ARP协议解决了什么样问题呢？我们都知道在网络包传输需要一个IP地址和一个MAC，如果IP地址可以类比成你的地址，MAC地址就是你的名字。IP地址我们可以通过查询DNS服务器获得，那么MAC地址怎么办？这个时候就需要ARP协议。<strong>通过IP协议获取目标设备的MAC地址，这就是ARP协议的工作目标。</strong></p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210814144601.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210814144601.png" srcset="/img/loading.gif"></p>
 <p>那如果如果通过IP地址获取的目标的MAC地址呢？其实很简单，<strong>在局域网中发送一个ARP请求，这个请求是以广播的形式发出去的，如果某一台机器收到ARP请求，并且发现要查询的IP地址和自己的一致，则返回自己的MAC地址</strong>。发送端收到这个目标机器的MAC地址后，为了避免每次都要发ARP包询问MAC地址，发送端会将这个地址缓存一段时间，方便后续的使用。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210814145303.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210814145303.png" srcset="/img/loading.gif"></p>
 <p>其中ARP协议发送的报文结构如下所示：</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210814145551.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210814145551.png" srcset="/img/loading.gif"></p>
 <h2 id="网络层"><a href="#网络层" class="headerlink" title="网络层"></a>网络层</h2><p>网络层是OSI模型中的第三层，介于传输层和数据链路层之间，它在数据链路层提供的两个相邻端点之间的<strong>数据帧</strong>的传输功能上，进一步管理网络中的数据通信，将数据设法从源端经过若干个中间节点传输到目的地端，从而<strong>向传输层提供基本的端到端的数据传输服务</strong>。我们熟知的<code>IP</code>和<code>ICMP</code>（ping命令）协议就工作在这一层。</p>
 <h3 id="IP协议"><a href="#IP协议" class="headerlink" title="IP协议"></a>IP协议</h3><p>IP协议是TCP/IP协议族的核心协议，其中包括两个方面：</p>
 <ul>
@@ -465,7 +465,7 @@
 <p> 因此IP服务上层协议往往需要自己实现数据确认，超时重传等机制，以达到安全可靠传输的目的。典型实现TCP协议。</p>
 </blockquote>
 <h4 id="IPv4协议头"><a href="#IPv4协议头" class="headerlink" title="IPv4协议头"></a>IPv4协议头</h4><p>IPv4的协议头如下所示，一般长度为20个字节(如下面的5层)，也有可能包含变长部分总长超过20个字节。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210817010024.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210817010024.png" srcset="/img/loading.gif"></p>
 <ul>
 <li><p>4位头部长度标识这个这个IP报文头长度，标识能<strong>有多少个4个字节，因此IP报文头最长 15 * 4 = 60个字节。</strong></p>
 </li>
@@ -492,7 +492,7 @@
 </li>
 </ul>
 <h4 id="路由与转发"><a href="#路由与转发" class="headerlink" title="路由与转发"></a>路由与转发</h4><p>IP协议的一个核心的任务是数据报文的路由，即决定数据报到目标机器的路径。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210817233637.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210817233637.png" srcset="/img/loading.gif"></p>
 <p>简单分析上面的图从左下角的IP输入队列开始。</p>
 <ul>
 <li><p>当IP模块接收到来自数据链路层的IP数据报，它<strong>首先对该数据报的头部做CRC校验</strong>，确认无误后就分析头部的具体信息。</p>
@@ -536,7 +536,7 @@
 </ol>
 </blockquote>
 <h3 id="ICMP协议"><a href="#ICMP协议" class="headerlink" title="ICMP协议"></a>ICMP协议</h3><p>我们通常在网络不是很好的时候，习惯使用<code>ping</code>命令去检查下网络的情况。而ping命令则是基于ICMP协议工作的。<code>ICMP</code> 全称 I<strong>nternet Control Message Protocol</strong>。即<strong>互联网控制报文协议</strong>。这里面的具体怎么“控制”的呢？网络包在异常复杂的网络环境中传输时，常常会遇到各种各样的问题。当遇到问题的时候，我们不能直接忽视问题。而是需要去探查问题的情况，然后<strong>根据结果来调整传输策略</strong>。I<strong>CMP报文是封装在IP包里面的</strong>，并且本身足够<strong>轻量</strong>以方便探测。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210904143454.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210904143454.png" srcset="/img/loading.gif"></p>
 <p>ICMP报文有很多种类型，不同的类型有不同的代码。<strong>最常用的类型是主动请求为8，主动请求的应答为0。</strong></p>
 <h4 id="查询报文类型"><a href="#查询报文类型" class="headerlink" title="查询报文类型"></a>查询报文类型</h4><p>ICMP查询报文类型，即<strong>主动探测网络的报文类型</strong>。我们常用的ping命令就是<strong>查询报文，是一种主动请求，并且获得主动应答的ICMP协议。</strong>因此ping发出的包也是符合ICMP协议格式的，只不过它在后面增加了自己的格式。</p>
 <p>对于ping 主动请求，进行网络抓包，称为<code>ICMP ECHO REQUEST</code>。同理主动请求的回复，称为<code>ICMP ECHO REPLY</code>。比起原生的 ICMP，这里多了两个字段，一个是标识符号，另外一个是序号，在选项数据中，ping 还会<strong>存放发送请求的时候，来计算往返时间，说明路程的长短。</strong></p>
@@ -558,7 +558,7 @@
 <p>这里提到了一个“连接”，这个连接是抽象的，并不是真的有两个通信端之间有一个类似“网线”一样的东西，他们只是靠通信的两端维护一定的数据结构保持某种状态，来记录和维护这样一个“连接”的状态。</p>
 </blockquote>
 <p>UDP的包头如下，通过包头我们也不难发现这是个简单没有什么复杂“想法”的协议。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210820000409.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210820000409.png" srcset="/img/loading.gif"></p>
 <h4 id="UDP的特点与使用场景"><a href="#UDP的特点与使用场景" class="headerlink" title="UDP的特点与使用场景"></a>UDP的特点与使用场景</h4><p>通过上面对UDP的介绍我们很容易就可以了解到UDP的特点：</p>
 <ul>
 <li><strong>轻量</strong>、<strong>简单</strong>。</li>
@@ -606,13 +606,13 @@
 </li>
 </ol>
 <h4 id="二进制协议"><a href="#二进制协议" class="headerlink" title="二进制协议"></a>二进制协议</h4><p>最新的<code>HTTP</code>版本在功能和属性（例如从文本协议转换为二进制协议）方面已经有了重大发展，<code>HTTP1.x</code>用于处理文本命令已完成请求-响应周期。<code>HTTP/2</code>将使用二进制命令执行相同的任务，此属性减轻了框架的复杂性，并简化了由于包含文本和可选空格的命令而导致混淆的命令和实现。<strong>使用HTTP/2实现的浏览器会将相同的文本命令转换为二进制命令，然后再通过网络传输。</strong></p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210828235701.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210828235701.png" srcset="/img/loading.gif"></p>
 <h4 id="请求多路复用"><a href="#请求多路复用" class="headerlink" title="请求多路复用"></a>请求多路复用</h4><p><code>HTTP/1.x</code>有个问题叫线端阻塞（head-of-blocking），它是指一个连接（connection）一次只提交一个请求的效率比较高，多了就会变慢。<code>HTTP/1.1</code>试过用流水线（pipelining）来解决这个问题，但是效果并不理想（数据量较大或者速度较高的响应，会阻碍排在他后面的请求），此外，由于网络媒介（intermediary）和服务器不能很好的支持流水线，导致部署起来困难重重。<strong>而多路传输（Multiplexing）能很好的解决这些问题，因为它能同时处理很多个消息的请求和响应</strong>；甚至可以在传输过程中将一个消息和另一个掺杂在一起。所以客户端只需要一个连接就能加载一个页面。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210829005226.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210829005226.png" srcset="/img/loading.gif"></p>
 <h4 id="标头压缩"><a href="#标头压缩" class="headerlink" title="标头压缩"></a>标头压缩</h4><p><code>HTTP/2</code>压缩大量冗余头帧。它使用HPACK规范作为标头压缩的简单安全方法。客户端和服务器都在维护在先前的客户端-服务器请求中使用的标头列表。<strong>HPACK 在将每个标头传输到服务器之前先压缩每个标头的单独值，然后服务器在先前传输的标头值列表中查找编码信息，以重建完整的标头信息。</strong></p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210829005245.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210829005245.png" srcset="/img/loading.gif"></p>
 <h4 id="HTTP-2服务器推送"><a href="#HTTP-2服务器推送" class="headerlink" title="HTTP/2服务器推送"></a>HTTP/2服务器推送</h4><p><strong>此功能使用服务器可以向客户端发送其他未缓存的信息，但这些信息会在以后的请求中得到预期</strong>。例如客户端请求资源X，并且可以理解资源Y被请求文件引用，则服务器可以选择将Y与X一起推送，而不是等待适当的客户端请求。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210829005612.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210829005612.png" srcset="/img/loading.gif"></p>
 <h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>这个部分我们介绍了大家大学基本上都记过的计算机网络模型，其中包括OSI七层模型，TCP/IP五层模型，其中OSI七层模型更多的是针对<strong>特定的功能</strong>来进行划分的，而TCP/IP五层模型则更多的针对的是<strong>协议划分</strong>，我们软件开发也更侧重于TCP/IP的五层模型。其中我们介绍了每一层都有哪些代表协议，不知道你现在还能不能记起来。在第二个部分，我们介绍了一个数据包是流转于模型的每一层之间，并且介绍了这个数据包是如何在网络上进行传输的。在最后一个大模块中，我们顺着模型从下往上介绍了每一层具有代表性的网络协议。在数据链路层，我们介绍了用于获取mac地址的ARP协议，网络层介绍了扛把子IP协议和网络探子ICMP协议，传输层则介绍了傻白甜的UDP协议和给TCP协议挖的一个坑。最后应用层，我们简单提了下HTTP/1和HTTP/2之间的区别。通过这一小节的梳理，基本上对网络也有了一个大体认知。下一节我们将深入梳理TCP协议，看看TCP是如何保证数据包又好又快地在复杂的网络环境中传输的。</p>
 <h1 id="学习资料"><a href="#学习资料" class="headerlink" title="学习资料"></a>学习资料</h1><ul>
 <li><p><a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/8094">趣谈网络协议（从物理层到MAC层：如何在宿舍里自己组网玩联机游戏？）</a></p>

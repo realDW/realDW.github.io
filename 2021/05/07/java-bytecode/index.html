@@ -160,7 +160,7 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('https://gitee.com/realDaiwei/img/raw/master/jorge-gardner-FKEhEi6RT1c-unsplash.jpg') no-repeat center center;
+         style="background: url('https://raw.githubusercontent.com/realDaiwei/image/master/jorge-gardner-FKEhEi6RT1c-unsplash.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -232,7 +232,7 @@
             <div class="markdown-body">
               <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我们通常表述的 JVM 通常有三种意思，JVM 是 Java virtual machine 即 java 虚拟机的缩写，也就是我们通常所指的 JVM。JVM还是一种用于计算设备的规范，它是一个虚构出来的计算机，是通过在实际的计算机上仿真模拟各种计算机功能来实现的。因此 JVM 也是图灵完备的。当然 JVM 还可以表示一个虚拟机的实例。Java 一个非常重要的特性就是和平台无关，而 JVM 是实现这一点的关键。JVM 底层使用 C 进行编写，只要平台能执行 C 语言，这也就能启动 JVM 运行 Java 程序。JVM 通过编译 Java 语言生成字节码文件，字节码文件在通过 JVM 进行解释执行。因此只要运行在不同的平台上的JVM 能拿到字节码文件，就能解释执行出相同的结果。这就是 Java 可以 “一次编译，到处执行” 的原因。 </p>
 <p>当然并不是Java 语言是跨平台的语言，拿 C++ 举个例子，C++ 也是一门跨平台的语言，但是和 Java 语言不同的是，C++ 需要到不同的平台生成不同的文件，然后进行执行，也就是源码跨平台，而 Java 是二进制跨平台。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003029.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210507003029.png" srcset="/img/loading.gif"></p>
 <h2 id="Java-字节码技术"><a href="#Java-字节码技术" class="headerlink" title="Java 字节码技术"></a>Java 字节码技术</h2><h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>Java 代码通过编译生成 Java 字节码即 .class 文件，不同的 JVM 通过执行 .class 文件实现跨平台。Java bytecode 由但字节 （byte）的指令组成，理论上最多支持 256 个操作码（opencode）。实际上 Java 只用了 200 左右的操作码，还有一些操作码则保留给调试操作。操作码， 下面称为 指令 , 主要由 类型前缀 和 操作名称 两部分组成。 </p>
 <blockquote>
 <p>例如，’ i ‘ 前缀代表 ‘ integer ’，所以，’ iadd ‘ 很容易理解, 表示对整数执行加法运算。</p>
@@ -257,17 +257,17 @@
 
 <p>这次的输出比之前一次多了不少的信息，首先是 10～39 行的常量池信息。这里记录了代码中用到的常量。40～68行是之前代码部分的字节码，这一次多了一些如 <code>descriptor, flags</code> 的信息。descriptor 是方法的描述符，flags 则是方法的访问描述符，这是个 public static 方法。第45行的 <code>stack=1, locals=1, args_size=1</code> 表示方法栈的深度为1， 本地局部变量表大小为1 ，方法的入参为1。这里有个比较有意思的地方，就是无参构造的 args_size 不为0 而是 1 ，这是因为对于构造方法需要有一个引用地址，也就是 this 的引用地址，这个可以类比反射里面<code>Method#invoke(Object obj, Object... args);</code> 第一个参数是被调用对象一样。</p>
 <h3 id="线程栈和字节码执行模型"><a href="#线程栈和字节码执行模型" class="headerlink" title="线程栈和字节码执行模型"></a>线程栈和字节码执行模型</h3><p>JVM 是基于栈的计算机模型，每一个线程都有自己的线程栈（JVM stack）和用于存储的<code>栈帧</code>（Frame），每调用一个方法JVM都会自动创建一个栈帧，栈帧中包括<code>操作数栈</code>，<code>局部变量数组</code>和一个 <code>class 引用</code>构成，class 引用指向当前方法在运行时常量池中对应的class。</p>
-<p>​       <img src="https://gitee.com/realDaiwei/img/raw/master/20210507003351.png" srcset="/img/loading.gif"></p>
+<p>​       <img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210507003351.png" srcset="/img/loading.gif"></p>
 <p><code>局部变量数组</code> 也成为 <code>局部方法表</code>（LocalVariableTable），其中包括方法的参数和局部变量。局部变量数组长度在编译时就已经确定。和局部变量和方法形参有关，但是具体长度还要看具体每个字段占用的长度。<code>操作数栈</code>（Operand Stack）是一个 LIFO 的结构栈，通过于压入弹出进行数据操作，其大小在编译时确定。</p>
 <p>一些操作码/指令可以将值压入操作数栈，还有一些操作码/指令从操作数栈获取操作数，并进行计算，然后再压入操作数栈。操作数栈还用于接受调用其他方法的返回值。</p>
 <h3 id="方法体中的字节码解析"><a href="#方法体中的字节码解析" class="headerlink" title="方法体中的字节码解析"></a>方法体中的字节码解析</h3><p>在前面的几个例子当中，字节码看起来问题都不大，但是看方法体中的字节码的编号有点看不懂，也就是下面的一些字节码</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">0:</span> <span class="hljs-string">new</span>           <span class="hljs-comment">#2                  // class HelloByteCode</span><br><span class="hljs-attr">3:</span> <span class="hljs-string">dup</span><br><span class="hljs-attr">4:</span> <span class="hljs-string">invokespecial</span> <span class="hljs-comment">#3                  // Method &quot;&lt;init&gt;&quot;:()V</span><br><span class="hljs-attr">7:</span> <span class="hljs-string">astore_1</span><br><span class="hljs-attr">8:</span> <span class="hljs-string">return</span><br></code></pre></td></tr></table></figure>
 
-<p>前面的一排数字是<code>指令集数组中的索引</code> new 操作占用一个槽位，并且 new 指令需要消耗两个操作数，所以 dup 指令是从<code>3</code>开始的，<code>dup</code> 指令不需要操作数，所以只占一个槽位。位于<code>4</code>号槽位中的 <code>invokespecial</code> 指令同样需要消耗两个操作数，所以 astore_1 从7号槽位开始。<code>astore_1</code>意思是将栈顶元素存入局部变量表1号槽位，不需要操作数，所以 <code>return</code> 位于<code>8</code>号槽位。<img src="https://gitee.com/realDaiwei/img/raw/master/20210507003454.png" srcset="/img/loading.gif"></p>
+<p>前面的一排数字是<code>指令集数组中的索引</code> new 操作占用一个槽位，并且 new 指令需要消耗两个操作数，所以 dup 指令是从<code>3</code>开始的，<code>dup</code> 指令不需要操作数，所以只占一个槽位。位于<code>4</code>号槽位中的 <code>invokespecial</code> 指令同样需要消耗两个操作数，所以 astore_1 从7号槽位开始。<code>astore_1</code>意思是将栈顶元素存入局部变量表1号槽位，不需要操作数，所以 <code>return</code> 位于<code>8</code>号槽位。<img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210507003454.png" srcset="/img/loading.gif"></p>
 <p>通过操作码/指令对照表并换算十六进制（HEX）表示形式之后。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003612.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210507003612.png" srcset="/img/loading.gif"></p>
 <p>也就是我们通过十六进制打开.class 文件所能看到的数据片段了。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003708.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210507003708.png" srcset="/img/loading.gif"></p>
 <h3 id="对象初始化指令"><a href="#对象初始化指令" class="headerlink" title="对象初始化指令"></a>对象初始化指令</h3><p>new 是Java 的关键字，但是在字节码中，也有一个指令 new 但是整个 new 的逻辑，可以分为以下的字节码</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">0: new           <span class="hljs-comment">#2                  // class HelloByteCode</span><br>3: dup<br>4: invokespecial <span class="hljs-comment">#3                  // Method &quot;&lt;init&gt;&quot;:()V</span><br></code></pre></td></tr></table></figure>
 
@@ -292,7 +292,7 @@
 <li><code>dup_x1</code>：复制栈顶的值, 并将复制的值插入到最上面2个值的下方。</li>
 <li><code>dup2_x1</code>：制栈顶 1个64位/或2个32位的值, 并将复制的值按照原始顺序，插入原始值下面一个32位值的下方。 配合使用可用于交换两个64位数据的位置。</li>
 </ul>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003819.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210507003819.png" srcset="/img/loading.gif"></p>
 <blockquote>
 <p>数据类型分组（1代表32 位元素， 2代表64位元素）</p>
 </blockquote>
@@ -360,9 +360,9 @@
 <p>给局部变量赋值时，需要使用相应的指令来进行 <code>store</code> ，如 <code>astore_1</code>、 <code>store</code> 类的指令都会删除栈顶值。 相应的 load 指令则会将值从局部变量表压入操作数栈，但并不会删除局部变量中的值。</p>
 </blockquote>
 <h3 id="算术运算指令与类型转换指令"><a href="#算术运算指令与类型转换指令" class="headerlink" title="算术运算指令与类型转换指令"></a>算术运算指令与类型转换指令</h3><p>Java 字节码有很多的指令可以执行算术运算。对于所有数值类型（<code>int</code>, <code>long</code>, <code>double</code>, <code>float</code>）都有各自的加、减、乘、除、取反指令。当然boolean、byte、short、char 等都是当 int 类型处理。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003904.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210507003904.png" srcset="/img/loading.gif"></p>
 <p>在java 是一个强类型的语言，如果类型不匹配需要进行类型转换，如果<code>int</code>需要转换为 <code>double</code> 会调用 i2d 指令进行类型转换。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210507003936.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210507003936.png" srcset="/img/loading.gif"></p>
 <p>唯一一个不需要将数值load到操作数栈的指令是 <code>iinc</code>，他可以直接对 <code>LocalVariableTable</code> 中的数值进行运算。其他的操作均使用操作数栈进行运算。</p>
 <blockquote>
 <p><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-7.html">操作码对照表</a></p>

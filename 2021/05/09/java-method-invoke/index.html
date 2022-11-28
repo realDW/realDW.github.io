@@ -160,7 +160,7 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('https://gitee.com/realDaiwei/img/raw/master/thom-holmes-qluz8quWa5Q-unsplash.jpg') no-repeat center center;
+         style="background: url('https://raw.githubusercontent.com/realDaiwei/image/master/thom-holmes-qluz8quWa5Q-unsplash.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -309,7 +309,7 @@
 <figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs reasonml">@CallerSensitive<br>public Object invoke(Object obj, Object... args)<br>    throws IllegalAccessException, IllegalArgumentException,<br>       InvocationTargetException<br>&#123;<br>    <span class="hljs-keyword">if</span> (!override) &#123;<br>        <span class="hljs-keyword">if</span> (!<span class="hljs-module-access"><span class="hljs-module"><span class="hljs-identifier">Reflection</span>.</span></span>quick<span class="hljs-constructor">CheckMemberAccess(<span class="hljs-params">clazz</span>, <span class="hljs-params">modifiers</span>)</span>) &#123;<br>            Class&lt;?&gt; caller = <span class="hljs-module-access"><span class="hljs-module"><span class="hljs-identifier">Reflection</span>.</span></span>get<span class="hljs-constructor">CallerClass()</span>;<br>            check<span class="hljs-constructor">Access(<span class="hljs-params">caller</span>, <span class="hljs-params">clazz</span>, <span class="hljs-params">obj</span>, <span class="hljs-params">modifiers</span>)</span>;<br>        &#125;<br>    &#125;<br>    MethodAccessor ma = methodAccessor;             <span class="hljs-comment">// read volatile</span><br>    <span class="hljs-keyword">if</span> (ma<span class="hljs-operator"> == </span>null) &#123;<br>        ma = acquire<span class="hljs-constructor">MethodAccessor()</span>;<br>    &#125;<br>    return ma.invoke(obj, args);<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p>可以看到 invoke 方法的源码，method.invoke()，最终是调用 <code>MethodAccessor.invoke()</code>，而MethodAccessor 又有两个实现类 <code>DeleagetingMethodAccessor</code> 和 <code>NativeMethodAccessor</code> ，一个是使用了委派模式实现调用，另一个则是通过 Native 方法实现反射调用。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210509204937.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210509204937.png" srcset="/img/loading.gif"></p>
 <p>在执行反射的时候会优先使用<code>NativeMethodAccessor</code> 直接调用 Native 方法，但是调用 Native 方法要切换成 C++ 执行方法，这个成本是大于一般的方法调用。那我们生成代理每次反射调用我们就去调用我们的代理对象，这样是不是就可以更快了呢？这样只是方法调用变快了，但是生成代理对象是很慢的，那生成代理对象的时间成本又怎么计算呢？所以 JVM 采用了折中的办法，<code>设置阈值</code>，当调用次数超过<code>默认的15</code>次JVM 为其生成代理对象，由 Native 方法调用切换为 Delegate 方法调用，来提高整体的执行性能。以为一切都很美好了，突然我们的代码发生了异常，那一起看看异常是怎么JVM异常是怎么处理吧。</p>
 <h2 id="Java-异常处理机制"><a href="#Java-异常处理机制" class="headerlink" title="Java 异常处理机制"></a>Java 异常处理机制</h2><h3 id="Java-异常"><a href="#Java-异常" class="headerlink" title="Java 异常"></a>Java 异常</h3><p>异常处理中主要组成要素：抛出异常和捕获异常。由于 Java 中没有 goto，所以这两大要素配置共同实现程序流程的非正常转移。抛出异常可以分为两种，一种是<code>显式抛出</code>另外一种是另外一种是<code>隐式抛出</code>。显式抛出指的是我们在程序中使用 new threw 的方式抛出异常，而隐式抛出则是 Java 虚拟机执行到异常情况，无法继续抛出的异常。例如数组越界，除0等。异常操作通常分成下面三块：</p>
 <ul>
@@ -323,7 +323,7 @@
 
 <p>上面的<code>Exception table</code>就是异常表，如果发生了异常会从异常表中招当前位置是在那个异常的返回，如果匹配到多个则从上到下一个个匹配，并跳转到对应的 target 的位置往下执行，前面提到了 target 的位置是 catch 块（异常处理器）开始的位置。在这里可以看到一个<code>0 15 26 any</code> 的异常记录。看到这个我们可能会疑惑，方法中明明只有一个try catch 块，为什么异常表中会有两条记录，而且最后一个异常类型是 any。其实这里的记录的是 finally块，从target 字节码对效应的代表执行的开始位置不难发现这是 finlly 块的位置。</p>
 <p>从上面的字节码还能看到一个细节，就是 finally 块的代码重复了两次。finally 代码块编译比较复杂，当前版本的做法就是在分别在 try 和 catch 的代码出口添加一段 finally 的内容。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210509205200.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210509205200.png" srcset="/img/loading.gif"></p>
 <p>那如果在 catch 代码块中还是出现了异常的场景，异常发生的行数还是在 <code>0 15 26 any</code> 的异常记录范围，同样会匹配到 any 也就是 finally 的代码块，这样就保证了不管在什么场景发生了异常都能执行 finally 的内容了，但是如果 finally 里面发生了异常呢？那就没有办法了。finally 会中止，并抛出异常。从字节码分析的角度也符合我们前面的结论。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>接着上一篇的 Java 字节码技术，这一小节我们通过运用字节码技术，分析方法的执行过程，以及方法的静态绑定和动态绑定。以及从算法层面探索了动态绑定的实现原理也就是方法表，以及方法表的优化方案内联缓存。当然除了正常的调用方法，我们还是使用反射的方式去进行方法调用。这一小节还通过源码分析的方式深入了反射的实现细节。最后我们一起看了异常这个让程序员喜忧参半的机制，通过创建异常表来对异常的执行路径进行索引，来保证程序的执行流程。我发现在方法这块JVM 很喜欢用”表”去解决一些问题, 方法表，异常表…</p>
 <p>昨天和一个朋友聊天，聊到所有不了解的东西都会自带一层神秘感，但是我们真正去了解它之后会发现其实也就那样，都是人能想出来的点子。真正要做的是积累，掌握向上的办法，这样我们才能见招拆招并创造属于我们的未来。</p>

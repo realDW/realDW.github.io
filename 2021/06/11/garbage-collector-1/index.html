@@ -160,7 +160,7 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('https://gitee.com/realDaiwei/img/raw/master/bruno-aguirre-qgz61Zfoge0-unsplash.jpg') no-repeat center center;
+         style="background: url('https://raw.githubusercontent.com/realDaiwei/image/master/bruno-aguirre-qgz61Zfoge0-unsplash.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -232,7 +232,7 @@
             <div class="markdown-body">
               <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前面一小节我们介绍了介绍了GC的一般性原理和垃圾回收算法，通过对前面知识的学习，我们基本掌握了垃圾收集的一般理论知识。但是理论终究知识在之上，距离真正的实践还有一定的差距。前面我们提到了第一个带有内存动态分配和垃圾收集的编程语言并不是 Java 而是1960年诞生的Lisp。当然这一小节中我们并不会梳理 Lisp 实现的垃圾收集器。这一小节我们会先从经典垃圾收集器入手，梳理各个垃圾收集器的特性、优缺点和适用场景。当然随着垃圾收集器的效率的不断提升其实现的复杂度也在不断提升。我们会主要的篇幅去介绍CMS和G1原理及部分实现细节，升华对垃圾收集器的理解。今天是六一儿童节，各位朋友坐好来，我们的梳理开始了。😂</p>
 <h2 id="经典垃圾收集器概述"><a href="#经典垃圾收集器概述" class="headerlink" title="经典垃圾收集器概述"></a>经典垃圾收集器概述</h2><p>这里的提到的“经典”并非出于情怀，只是他们的确挺经典，是出于讨论范围的限定。我们这里讨论的是在 JDK 7 Update 4 之后（这个版本中正式提供了商用的 G1 收集器，此前 G1 仍处于实验状态）、JDK 11 正式发布之前，OracleJDK 中提供的 HotSpot 虚拟机所包含的全部可用的垃圾收集器。使用“经典”来描述是为了区分开目前几款正处于实验状态，但执行效果却具有革命性改进的高性能低延迟的垃圾回收器。这些经典的垃圾回收器虽然已经不算是最先进的技术，但是这些经典的垃圾回收器都在生产环境经过千锤百炼，足够成熟，基本上可以认为现在到未来几年内可以在生产环境上放心使用的垃圾收集器，因此掌握他们的特点和配置细节很重要。下图是各个经典垃圾收集器之间的关系。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210602003646.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210602003646.png" srcset="/img/loading.gif"></p>
 <p>上面这张图展现了七种作用于不同分代的垃圾回收器，图中垃圾收集器所处的位置则表示他们工作的区域即年轻代或老年代。其中上面<code>Young Generation</code>表示年轻代，下面的<code>Old Generation</code>则代表老年代。如果两个垃圾回收器之间存在连线，则说明他们两个可以搭配使用。</p>
 <blockquote>
 <p>⚠️需要注意的是，这个关系并不是一成不变的，由于维护和兼容性测试的成本，在JDK8时将 Serial+CMS、ParNew+Serial Old这两个组合声明为废弃（JEP173），并在 JDK 9 中完全取消了这些组合的支持（JEP214）。</p>
@@ -242,7 +242,7 @@
 <figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs diff"><span class="hljs-deletion">-XX:+UseSerialGC</span><br></code></pre></td></tr></table></figure>
 
 <h2 id="Parallel收集器（Parallel-Scavenge-Parallel-Old）"><a href="#Parallel收集器（Parallel-Scavenge-Parallel-Old）" class="headerlink" title="Parallel收集器（Parallel Scavenge + Parallel Old）"></a>Parallel收集器（Parallel Scavenge + Parallel Old）</h2><p>Parallel 收集器也叫做<code>并行收集器</code>，他能<strong>并行的进行垃圾收集</strong>。<code>Parallel Scavenge</code>是 Parallel 在新生代运行的垃圾收集器，采用的同样也是<code>标记复制算法（mark-copy）</code>，在老年代使用的是 Parallel Old 收集器，使用的也是<code>标记清除整理算法（mark-sweep-compact）</code>。<code>Parallel</code>和<code>Serial</code>一样进行垃圾收集时，<strong>Parallel 在新生代和老年代都会触发STW，但是 Parallel 是采用并行标记，并行垃圾收集，因此STW时间和垃圾收集时间会相较于Serial短很多，垃圾收集速递大幅度提高</strong>。后面我们会介绍 CMS 垃圾收集器，CMS 新生代使用的是 ParNew 这也是一款并行的垃圾收集器，那他们区别是什么呢？Parallel 侧重的更多是可控制<code>吞吐量（Throughput）</code>，而<strong>CMS侧重更短的STW时间</strong>。Parallel也是<code>JDK8的默认垃圾回收器</code></p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210603011802.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210603011802.png" srcset="/img/loading.gif"></p>
 <p>Parallel 适用多核心处理处理器，主要目的是增加吞吐量。因为对系统资源的有效使用能达到更高的吞吐量。在GC期间<strong>所有的CPU内核都在并行清理垃圾</strong>，所以总暂停时间更短；在两次GC周期的间隔期，没有GC线程在运行，不会消耗任何系统资源。使用下面的JVM参数即可以开启ParallelGC。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell">-XX:+UseParallelGC<br>-XX:+UseParallelOldGC<br>-XX:+UseParallelGC -XX:+UseParallelOldGC<br></code></pre></td></tr></table></figure>
 
@@ -275,9 +275,9 @@
 <blockquote>
 <p>我们前面提到对新生代进行垃圾收集标记阶段，会把脏卡中的对象（老年代指向新生代引用的对象）加入GC Roots，这里也是类似的处理方向，只不过方向反过来了，把新生代中指向老年代的对象加入GC Roots。</p>
 </blockquote>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210605163034.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210605163034.png" srcset="/img/loading.gif"></p>
 <h4 id="阶段2：并发标记（Concurrent-Mark）"><a href="#阶段2：并发标记（Concurrent-Mark）" class="headerlink" title="阶段2：并发标记（Concurrent Mark）"></a>阶段2：并发标记（Concurrent Mark）</h4><p>在这个阶段，CMS GC遍历老年代，标记所有的存活对象，从前一阶段的“Initial Mark”找到的根对象开始算起。“并发标记阶段，就是与应用程序同时运行，不用暂停的阶段（这个阶段没有STW）。⚠️请注意并非所有的老年代中存活的对象都在此阶段被标记，因为在<strong>标记过程中对象的引用关系还在发生这变化。</strong></p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210605164135.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210605164135.png" srcset="/img/loading.gif"></p>
 <p>在上面的图中，<code>当前处理对象</code>的一个引用被应用程序给断开了，即这个对象的应用关系发生了变化。那我们要怎么处理这种变化的引用关系呢？先<code>标记脏卡</code>。</p>
 <h4 id="阶段3：并发预处理（Concurrent-Preclean）"><a href="#阶段3：并发预处理（Concurrent-Preclean）" class="headerlink" title="阶段3：并发预处理（Concurrent Preclean）"></a>阶段3：并发预处理（Concurrent Preclean）</h4><p>在这个阶段不需要STW停顿，因为前面一个阶段<code>并发标记</code>与程序一起运行，可能有一些对象的引用关系已经发生了变化。如果在并发标记中引用发生了变化，那么JVM 将通过 Card 的方式将发生改变的区域标记为“脏”卡，这是老年代清理过程中的<code>卡片标记</code>，并发标记在前面一小节有详细的介绍。 <strong>这个阶段还会处理在执行并发标记阶段新进入老年代的对象（新晋升的对象）。</strong></p>
 <blockquote>
@@ -285,14 +285,14 @@
 <p>这里的<code>CMS中的脏卡</code>是指在CMS 并发标记的过程中引用发生变化卡，在后续垃圾收集过程中进行特别处理。</p>
 <p><code>共同点</code>都是都是JVM老年代的卡片标记技术，标记某个内存块，为后续垃圾收集操作提供标识。</p>
 </blockquote>
-<p>​        <img src="https://gitee.com/realDaiwei/img/raw/master/20210605173345.png" srcset="/img/loading.gif">                                       </p>
+<p>​        <img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210605173345.png" srcset="/img/loading.gif">                                       </p>
 <p>在预清理阶段，这些<strong>脏对象会被统计出来，他们所引用的对象也会被标记</strong>，此阶段完成后，用以标记的 card 也会被清空。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210605231002.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210605231002.png" srcset="/img/loading.gif"></p>
 <p>这个阶段还会进行一些必要的细节处理，还会为<code>Final Remark</code>做一些准备工作。</p>
 <h4 id="阶段4：可取消的并发预清理（Concurrent-Abortable-Preclean）"><a href="#阶段4：可取消的并发预清理（Concurrent-Abortable-Preclean）" class="headerlink" title="阶段4：可取消的并发预清理（Concurrent Abortable Preclean）"></a>阶段4：可取消的并发预清理（Concurrent Abortable Preclean）</h4><p>这个阶段也不会STW，这个阶段在 STW的Final Remark 之前尽可能地多做一些工作。这个阶段可显著影响STW停顿持续时间。</p>
 <h4 id="阶段5：最终标记阶段（Final-Remark）（STW）"><a href="#阶段5：最终标记阶段（Final-Remark）（STW）" class="headerlink" title="阶段5：最终标记阶段（Final Remark）（STW）"></a>阶段5：最终标记阶段（Final Remark）（<strong>STW</strong>）</h4><p>最终标记阶段是本次GC时间中的第二次（也是最后一次）<strong>STW停顿</strong>。本阶段的目标是完成老年代中所有存活对象的标记。因为之前的预清理阶段是并发执行的，有可能GC线程跟不上应用程序的修改速度。所以需要一次STW暂停来说处理各种复杂的情况。通常 CMS 会尝试在年轻代尽可能空的情况下执行 Final Remark，以免连续触发多次 STW事件。在以上5个阶段完成之后，老年代中的所有存活对象都被标记了，然后GC将清除所有不使用的对象来回收老年代空间。 </p>
 <h4 id="阶段6：并发清除（Concurrent-Sweep）"><a href="#阶段6：并发清除（Concurrent-Sweep）" class="headerlink" title="阶段6：并发清除（Concurrent Sweep）"></a>阶段6：并发清除（Concurrent Sweep）</h4><p>这个阶段不需要 STW停顿，JVM在此阶段清理不再使用的对象，并回收他们占用的内存空间。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210605235328.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210605235328.png" srcset="/img/loading.gif"></p>
 <h4 id="阶段7：并发重置（Concurrent-Reset）"><a href="#阶段7：并发重置（Concurrent-Reset）" class="headerlink" title="阶段7：并发重置（Concurrent Reset）"></a>阶段7：并发重置（Concurrent Reset）</h4><p>这个阶段与应用程序并发执行，重置 CMS 算法相关内置数据，并为下次GC循环做好准备。</p>
 <h3 id="汇总四阶段"><a href="#汇总四阶段" class="headerlink" title="汇总四阶段"></a>汇总四阶段</h3><p>有的书上我看介绍 CMS 的垃圾回收步骤只有5步甚至是4步，书中梳理出来的4步分别为：</p>
 <ul>
@@ -324,7 +324,7 @@
 <p>这就像你妈在打扫房间而你又在一旁制造垃圾，这个时候你妈除了把你胖揍一顿拿你毫无办法。谁让这垃圾收集线程与应用线程之间是要并发的关系呢。解决的办法也很简单，只要你妈打扫卫生的速度大于你生产垃圾的速度，你妈就能把垃圾打扫完并把你胖揍一顿。因此只要<code>内存分配速率 &lt; 垃圾收集速率</code>那么一切都很完美，浮动垃圾随他去吧，。</p>
 </blockquote>
 <p>那么<code>内存碎片的问题</code>，G1是怎么处理的呢？<code>“化整为零”</code>，这个思路很特别，跳出原有的思维束缚。G1的内存结构和传统的内存结构非常的不同，每个内存块还是有Eden区，Survivor区和Old的区的划分。但不再分成年轻代和老年代，而是划分为多个（通常是2048个）可以存放对象的<code>小块内存区域（smaller heap regions）</code>。每一个小块，可能一会被定位为Eden、Survivor或Old区，所有的Eden区拼在一起就是年轻代，所有的Old区拼在一起就是老年代。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210606162329.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210606162329.png" srcset="/img/loading.gif"></p>
 <p>除了这些问题上，创新性的解决思路，G1还有一个小目标，<strong>希望能做出一款能够建立起“停顿时间模型”（Pause Prediction Model）的收集器</strong>，停顿时间模型的意思是能够<strong>支持指定在一个长度为M毫秒的时间片段内，消耗在垃圾收集器上的时间大概不会超过N毫秒的这样的目标。</strong></p>
 <p>有了上面的思路的转变对于G1的认知是否有转变呢？面对浮动垃圾的问题，G1没有直面的去解决而是通过提高垃圾回收速率的方式即<code>垃圾回收速率&gt;内存分配速率</code> 的方式来处理。面对前面CMS遇到的内存碎片问题，<strong>G1将整个内存“打碎成块”然后通过整体复制的方式直接避免了内存碎片的产生</strong>。这个解决的方式是不是很巧妙。通过上述的解决方案，再来看G1的小目标。希望能做出一款能够建立起“停顿时间模型”（Pause Prediction Model）的收集器，是不是就有了思路呢？</p>
 <p><strong>只要每次垃圾收集的周期只要收集的垃圾的速率&gt;内存分配速率是不是就可以了呢？是的！每个内存块又是独立的。这样每次GC周期目标就很明确了，只要收集全部的新生代和部分老年代的内存块，并且保证每次GC周期垃圾收集速率 &gt; 内存分配速率。</strong>每次GC周期不用完成所有内存块的垃圾收集工作，停顿时间模型也可以基于G1建立起来，这同时也呼应了这款垃圾收集器的名字 Garbage First。这种设计思路从工程实现上来看是从 G1 上开始兴起，所以说 G1 是收集器发展的一个里程碑。</p>
@@ -332,7 +332,7 @@
 <ul>
 <li><strong>跨 Region 之间的引用问题。</strong>根据前面的学习，我们可以知道使用记忆集Remember Set（也就是我们前面提到的Card Table），通过记忆集的方式，可以避免全堆作为 GC Roots 进行扫描。在之前的技术中，不管新生代垃圾收集时用到还是CMS并发标记标记引用变动时用到记忆集，都是简单老年代的标记。但是G1在记忆集中的运用则复杂的多，每一个Region都需要维护着自己的记忆集。里面记录着<strong>别的Region指向自己的指针，并标记着这些指针在哪些范围卡页之内。</strong>Remeber Set 本质的集合是一种 Hash 表，Key 是别的Region的起始地址，Value是一个集合，里面存储的元素卡表的索引号，这种结构不同于卡表，卡表记录的是“我指向谁”，而这种结构记录的更多的是“谁指向我”。这种结构比卡表实现起来更加的复杂，同时Region的数量又比传统收集器分代数量多得多，<strong>因此G1收集器相比其他的传统垃圾收集器有着更高的内存占用负担</strong>，更具经验这个<strong>额外开销大致相当于堆容量的10%～20%。</strong></li>
 </ul>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210606230603.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210606230603.png" srcset="/img/loading.gif"></p>
 <ul>
 <li><strong>并发标记阶段如何保证收集线程和用户线程互不干扰的运行。</strong>这里要解决的两个问题，一个是并发的进行标记，用户线程改变对象引用关系时，必须保证其不能打破原本的对象图结构，导致标记结果出现问题。我们可以采用三色标记法解决这个问题，三色标记法在前面一小节《JVM GC篇 — 一般原理与垃圾收集算法》中有详细介绍。此外<strong>垃圾收集对应用线程的影响还体现在回收过程中对象的分配上</strong>，程序要继续运行就要在垃圾回收的过程中创建对象分配内存空间。G1为每个Region设计了<strong>两个名为TAMS（Top at Mark Start）的指针，把一部分空间划分出来用于并发回收过程中新的对象分配</strong>。G1在这个地址上的对象是隐式标记过的，即默认它们是“存活”的，不纳入回收范围。在G1中也有 CMS 中“Concurrent Mode failed”的类似场景，如果<strong>垃圾回收速度赶不上内存分配速度，G1也会被迫进行<code>FullGC</code>，从而导致较长时间的STW。</strong></li>
 <li><strong>如何建立可靠的停顿预测模型。</strong>解决了上面的两个问题还有一个问题怎么建立可靠的停顿预测模型？这是G1设计的小目标，用户通过<code>-XX:MaxGCPauseMillis</code> 参数指定停顿时间只意味着垃圾收集发生之前的期望，但是G1是怎么在垃圾收集时，满足用户的期望值的呢？G1 使用的停顿预测模型是以<code>衰减均值（Decaying Average）</code>，为理论基础来实现的。在垃圾收集的过程中，G1收集器会记录每个 Region 的回收耗时、每个 Region 记忆集里面的脏卡数量等各个<strong>可测量的步骤花费的成本，并且分析得出平均值、标准偏差、置信度等统计信息</strong>。这里强调的“<code>衰减平均值</code>”是指的<strong>它会比普通的平均值更容易收到新数据的影响</strong>，平均值代表整体平均状态，但是平均值更准确地代表了“最近的”平均状态。换句话说，<strong>Region的统计状态越新越能决定其回收的价值</strong>。然后通过这些信息进行分析，完成在<strong>不超过期望停顿时间的约束下达到收集收益的最大化。</strong></li>
@@ -362,28 +362,28 @@
 <li><code>nextBitMap</code>是当前正在进行的<code>concurrent marking</code>阶段的bitmap。</li>
 <li>当<code>concurrent marking</code>标记完成后，两个<code>bitmap</code>会交换角色。</li>
 </ul>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210610001206.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210610001206.png" srcset="/img/loading.gif"></p>
 <p>bitmap 上面的数组结构（<code>RoaringBitMap</code>和<code>redis</code>中的<code>BitMap</code>都是这样的结构），其中<strong>白色的区域是存活对象，灰色的是待回收的垃圾对象</strong>。除了bitmap我们还需要两个<code>TAMS</code>（Top at Mark Start）指针。接下来我们来看看在垃圾回收各个阶段，这两个指针是怎么配合划分线程进行内存来分配和垃圾回收。</p>
 <ul>
 <li><strong>初始标记阶段</strong>，从下面的图中我们不难发现，初始标记阶段<code>PrevTAMS</code>指针和<code>Bottom</code>指针（<strong>region的初始位置</strong>）位置一致，同时第二个<code>NextTAMS</code>的指针和Top指针位置一致，其中<strong>top指针是已分配的内存和未分配内存的切分点。</strong>同时初始化<code>NextBitMap</code>，由于这是一块干净的Region，因此PrevBitMap是空的。</li>
 </ul>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210610003231.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210610003231.png" srcset="/img/loading.gif"></p>
 <ul>
 <li><strong>并发标记和最终阶段</strong>，下面的图是标记完成后Region中的情况，其中GC线程在<code>PrevTAMS</code>和<code>NextTAMS</code><strong>之间进行并发标记</strong>，而<strong>新对象的内存分配在<code>NextTAMS</code>和<code>TOP</code>之间进</strong>行，由于是刚分配的对象GC默认这里的对象都是存活状态。这样就巧妙的解决了垃圾收集和对象内存分配的并发问题。</li>
 </ul>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210610003425.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210610003425.png" srcset="/img/loading.gif"></p>
 <ul>
 <li><strong>清理阶段</strong>，最终清理阶段，我们将<code>NextBitMap</code>赋值给<code>PrevBitMap</code>。如果<strong>不进行暂停转移并发清理垃圾对象</strong>即可并<strong>继续使用</strong>这个Region。如果进行<strong>对象转移</strong>，那么将<strong>把存活对象复制到一个新的Region</strong>中并<strong>清空</strong>当前Region。</li>
 </ul>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210610004607.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210610004607.png" srcset="/img/loading.gif"></p>
 <ul>
 <li><strong>下一轮初始标记</strong>，同样的我们初始化新的<code>NextBitMap</code>，这里还有一个重要的操作就是<strong>把<code>NextTAMS</code>指向<code>TOP</code>的位置</strong>，告诉GC本轮标记的工作空间范围。然后接下来<code>TAMS</code>和<code>bitMap</code>就按照上面的标记和清理阶段不断循环下去。</li>
 </ul>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210611012152.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210611012152.png" srcset="/img/loading.gif"></p>
 <p>接下来Region的中的TAMS指针和bitMap的情况如下图所示。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210610005825.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210610005825.png" srcset="/img/loading.gif"></p>
 <p>如果有静态图还是有点懵，整个流程的动图如下 😉</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/17093e8bc74d2cb5.gif" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/17093e8bc74d2cb5.gif" srcset="/img/loading.gif"></p>
 <blockquote>
 <p>这个问题我也是看书时候看懵了，为什么需要两个TAMS呢？就像彻底搞清楚这个流程，然后在网上发现了《<a target="_blank" rel="noopener" href="https://www.cnblogs.com/thisiswhy/p/12388638.html">面试官问我G1回收器怎么知道你是什么时候的垃圾？</a>》这篇文章，这篇文章写的非常有意思，强烈建议看一遍原文。</p>
 </blockquote>

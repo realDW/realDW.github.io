@@ -160,7 +160,7 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('https://gitee.com/realDaiwei/img/raw/master/max-22x7fxFpl_8-unsplash.jpg') no-repeat center center;
+         style="background: url('https://raw.githubusercontent.com/realDaiwei/image/master/max-22x7fxFpl_8-unsplash.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -245,7 +245,7 @@
 </li>
 </ul>
 <h1 id="协议头详解"><a href="#协议头详解" class="headerlink" title="协议头详解"></a>协议头详解</h1><p>和UDP一样，我们先看TCP的头部信息，相较于UDP头信息的简单，TCP的头部信息则复杂得多。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210821154115.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210821154115.png" srcset="/img/loading.gif"></p>
 <p>这些头部信息含义分析如下：</p>
 <ul>
 <li><p>源端口号：发送网络包的程序端口号。</p>
@@ -292,7 +292,7 @@
 <p>B：嗯？在听呢，你也好啊👋，A。</p>
 <p>A：B，你好你好。🙈</p>
 <p>双方确认对方都在听自己说话之后，两个人就可以开始愉快的沟通了。这个过程我们也常称为“请求 -&gt; 应答 -&gt; 应答之应答”。把这个逻辑翻译成计算机中建立网络的语言就是下面这个过程：</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210821175756.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210821175756.png" srcset="/img/loading.gif"></p>
 <p>一开始，客户端和服务端都处于<code>CLOSED</code>状态。先是服务端主动监听某个端口，处于<code>LISTEN</code>状态。然后客户端主动发起连接<code>SYN</code>，之后处于<code>SYN-SENT</code>状态，服务端收到发起的连接，返回<code>SYN</code>，并且<code>ACK</code>客户端的<code>SYN</code>，之后处于<code>SYN-RCVD</code>状态。客户端收到服务端发送的<code>SYN</code>和<code>ACK</code>之后，发送ACK<code>的</code>ACK<code>，之后处于</code>ESTABLISHED<code>状态，因为客户端已经一发一收成功了。服务端收到</code>ACK<code>的</code>ACK<code>之后，处于</code>ESTABLISHED`状态，此时服务端也一发一收成功了。在后续的的连接中如果连接空着也没关系，我们在程序中可以开启keepalive，即时没有数据传输，双方也会发送探活空包来保持通信。</p>
 <blockquote>
 <p>这里有一个细节，TCP通过将每个数据包生成一个递增的序号，来解决因为网络通路延迟带来的数据包到达的顺序问题，<strong>接收端只要收到包后按照这个序号进行排序，即可得到数据包正确的顺序</strong>。</p>
@@ -305,7 +305,7 @@
 <p>B：我这边也处理完了，再会👋。</p>
 <p>A：好的，我知道了，再见。</p>
 <p>四次挥手和三次握手不一样，断开连接有四次交互在结束请求接收端，在第一轮通信之后，并不会立刻发送关闭请求，而是有一个<code>COLSED_WAIT</code>状态。随后再会主动发起一次关闭请求。之后请求端收到请求后<code>TIME_WAIT</code>完成之后，才会关闭连接。整个通信过程如下图：</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210822004124.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210822004124.png" srcset="/img/loading.gif"></p>
 <p>在这个过程中，一开始双方都是处于<code>ESTABLISHED</code>的状态，随后请求端发起<code>FIN</code>请求，并随进入到<code>FIN_WAIT_1</code>状态，随后接收端收到请求后回复一个<code>ACK</code>并进入<code>CLOSED_WAIT</code>状态，请求端收到接收端的<code>ACK</code>后，进入到<code>FIN_WAIT_2</code>状态，等待接收端的发起的FIN请求。在接收端处理完一些关闭流程后，发起接收端向请求端的FIN请求，随后进入<code>LAST_ACK</code>状态，即等待最后一个<code>ACK</code>响应。请求端接收到这个<code>FIN</code>请求后，发送一个<code>ACK</code>响应并进入到时间长度为2个<code>MSL</code>的<code>TIME_WAIT</code>状态，随后关闭连接。接收端在收到请求端的最后一个<code>ACK</code>响应之后也随即关闭连接。</p>
 <blockquote>
 <p>其实理解三次握手和四次挥手有个隐藏的点，注意到这个点，也就能轻松理解这个建立和关闭连接的过程了，这个点就是 TCP连接是<strong>全双工的</strong>，因此在建立连接阶段，需要<strong>发送方一发一收</strong>，确认发送端到接收端的通信正常，也需要<strong>接收端一发一收</strong>，确认接收端到发送端通信正常。而在四次挥手过程中，因为关闭接收方，中间会有一个<code>CLOSED_WAIT</code>状态，所以这个关闭的过程就分成了<strong>四次通信。</strong></p>
@@ -316,7 +316,7 @@
 <p><strong>流量控制</strong>解决的是<strong>发送端速率和接收端速率不匹配</strong>的问题，<strong>拥塞控制</strong>应对处理的是<strong>网络本身的拥塞问题。</strong></p>
 </blockquote>
 <p>在TCP头里面，接收端会给发送端一个窗口大小，即Advertised window。这个窗口的大小就是当前可以发送的传输窗口大小。下面就是一个发送的窗口的模拟结构，其中包含四个部分<code>发送已经确认</code>， <code>发送未确认</code>，<code>未发送可发送</code>，<code>未发送不可发送</code>。其中我们滑动窗口的范围就是所有处于<strong>发送中</strong>的数据。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210824235013.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210824235013.png" srcset="/img/loading.gif"></p>
 <ul>
 <li><p>LastByteAcked：第一部分和第二部分的分界线。</p>
 </li>
@@ -326,7 +326,7 @@
 </li>
 </ul>
 <p>对于接收端来说，也有一个对接的接收的数据结构，这个数据结构，其中包括三个部分，分别是<code>接收已经确认</code>，<code>等待接收未确认</code>，<code>不能接收</code>。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210825004244.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210825004244.png" srcset="/img/loading.gif"></p>
 <ul>
 <li><p>LastByteRead 表示应用层读到的最后一个位置，这个位置后面的数据都在RcvBuffer中。</p>
 </li>
@@ -337,31 +337,31 @@
 </ul>
 <p>其中滑动窗口<code>AdvertisedWindow</code>的大小也就是中间等待接收但是未接收的部分，即<code>AdvertisedWindow = MaxRcvBuffer-NextByteExcepted</code>。如果当前接收端的MaxRcvBuffer在传输过程中没有发生变化的话，发送端是可以通过之前返回的窗口大小来反推当前窗口大小的。即<code>availableWindowSize = oldAdvertisedWindow - newLastByteAcked</code>。</p>
 <h2 id="流控分析"><a href="#流控分析" class="headerlink" title="流控分析"></a>流控分析</h2><p>有了上面的数据结构，我们可以开始分析数据收发过程中的<strong>流量控制和确认重试</strong>。先看滑动窗口协议是怎么进行流量控制的。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210824235013.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210824235013.png" srcset="/img/loading.gif"></p>
 <p>在每次ACK的响应包中的TCP头都会携带一个窗口大小返回，这个数值就是<strong>当前可以发送的数据包的个数</strong>。如上图所示，当前我们的窗口大小是8，并且这次我们一次性发送了5个数据包。同时发送端的接收情况如下图：</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210824235013.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210824235013.png" srcset="/img/loading.gif"></p>
 <p>在这5个数据包确认之后，接收端的如下图所示，但是不难发现窗口并没有进行滑动。是因为数据在buffer还没有被应用层读取，此时在返回ACK包中窗口大小就8减小到3。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210825004833.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210825004833.png" srcset="/img/loading.gif"></p>
 <blockquote>
 <p>这里有一个注意的点⚠️</p>
 <p>当窗口大小缩小到0，发送方就会停止发送数据，这个时候发送方不会给发送方发送数据包，接收方也没有多余的ACK响应告诉发送方窗口大小，这个时候双方就陷入了僵局，为了避免这种情况的发生，当窗口大小变为0之后，发送方会定时发送窗口大小探测数据包。看时候有机会调整窗口大小。但是接收方为了避免<strong>低能窗口综合症</strong>，接收方可以在窗口很小的时候不更新窗口，只有当接收窗口到达一定大小或者到达MaxRcvBuffer一半大小时候，才更新窗口接收数据。</p>
 </blockquote>
 <p>而在buffer中的数据被应用层读取之后，RcvBuffer空闲出来又可以接收的数据，此时接收窗口更新并通过ACK包告诉发送端调整发送窗口大小，此时的窗口大小11，接收端如下图所示。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210825011205.png" srcset="/img/loading.gif" alt="img"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210825011205.png" srcset="/img/loading.gif" alt="img"></p>
 <p>在发送端收到更新窗口大小的ACK包后，发送端也调整窗口大小为11，并继续传输数据。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210825012436.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210825012436.png" srcset="/img/loading.gif"></p>
 <blockquote>
 <p>这里要注意的是，<strong>接收方先调整窗口大小，发送方收到接收方的ACK确认之后才会调整窗口大小。</strong></p>
 </blockquote>
 <p>整个过程如下</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/IMG_3450.GIF" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/IMG_3450.GIF" srcset="/img/loading.gif"></p>
 <h2 id="数据包确认与丢包重试"><a href="#数据包确认与丢包重试" class="headerlink" title="数据包确认与丢包重试"></a>数据包确认与丢包重试</h2><p>上面的过程都是一切顺利的情况，但是面对丢包时常发生的网络环境，那TCP的滑动窗口是通过什么样的数据包的确认和丢包重试机制，保证传输的效率的同时又保证了传输的可靠。</p>
 <h3 id="累计确认-累计应答"><a href="#累计确认-累计应答" class="headerlink" title="累计确认/累计应答"></a>累计确认/累计应答</h3><p>为了保证顺序性，每个包都有一个唯一的序列号。在建立连接的时候，就确定起始序列号的偏移量，然后按照序列号一个个发送，为了保证不丢包，对于发送的包都要进行应答，但是应答ACK也不是一个个来的，而是<strong>只要应答所有的包的最后一个包，就表示所有的包都收到了</strong>。这种应答模式的成为累计确认或者累计应答（cumulative acknowledgment）。这个过程类似于下面的场景，在接收端的接收到<code>数据包I</code>和<code>数据包J</code>后分别返回了<code>I的ACK</code>和<code>J的ACK</code>。<code>I的ACK</code>在传输过程中丢包了，但是发送端收到后<code>J的ACK</code>后依然确认了<code>数据包I</code>送达。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/IMG_3457.GIF" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/IMG_3457.GIF" srcset="/img/loading.gif"></p>
 <h3 id="超时重传"><a href="#超时重传" class="headerlink" title="超时重传"></a>超时重传</h3><p><strong>对每一个发送的，但是没有ACK的包，都设有一个定时器，如果超过一定时间就会触发重试</strong>，但是这个超时时间不宜过长也不宜过短，时间必须大于往返时间RTT，否则会引起不必要的重传。也不易过长，否则访问时间会变慢。<strong>这个时间需要TCP通过采样RTT时间，然后进行加权平均，算出一个均值，而且这个值还是要不断的变化，因为网络状况不断低变化</strong>。除了采样RTT，还要采样RTT的波动范围，<strong>计算出一个估值的超时时间</strong>，由于重传时间是不断变化的，我们称为<code>自适应重传算法（Adaptive Retransmission Algorithm）</code>。TCP的重传策略是<strong>超时间间隔加倍，每当遇到一次超时重传的时候，都会将下一次超时时间间隔为设为先前值的两倍。两次超时，就说明网络环境差，不宜频繁反复发送。</strong></p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/IMG_3458.GIF" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/IMG_3458.GIF" srcset="/img/loading.gif"></p>
 <h3 id="快速重传"><a href="#快速重传" class="headerlink" title="快速重传"></a>快速重传</h3><p>当接收方收到一个序号大于下一个所期望的报文段时，就会监测数据流中的一个间隔，于是<strong>它就会发送冗余的ACK，冗余ACK的期望是接收重传的报文段</strong>。而客户端在收到<strong>三个冗余的ACK</strong>后，就会在定时器过期之前，重传丢失的报文段。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/IMG_3459.GIF" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/IMG_3459.GIF" srcset="/img/loading.gif"></p>
 <h3 id="Selective-Acknowledegment（SACK）"><a href="#Selective-Acknowledegment（SACK）" class="headerlink" title="Selective Acknowledegment（SACK）"></a>Selective Acknowledegment（SACK）</h3><p>这种方式需要接收方在返回的ACK的TCP头中加一个SACK数据，<strong>发送方可以通过读取SACK，知道接收方的数据接收情况，并且针对性的重传接收端丢失的包</strong>。</p>
 <h1 id="拥塞控制"><a href="#拥塞控制" class="headerlink" title="拥塞控制"></a>拥塞控制</h1><p>在上面的部分我们介绍了TCP的流量控制，通过一个数据包一个ACK的方式保证了传输的可靠性，通过各种各样的确认和重传策，数据发送端进行流量控制确保，每个数据包都能准确地传输到接收端。但是我们不仅仅只是满足于可靠的传输，我们还要充分利用网络最大带宽进行数据传输，即利用网络进行又好又快的进行传输。</p>
 <blockquote>
@@ -440,14 +440,14 @@
 <li>若发送方接收到<strong>一条新的确认报文</strong>，则cwnd被置为ssthresh，然后进入到<strong>拥塞避免</strong>模式。</li>
 </ul>
 <p>这几个算法传输速率的图如下，其中蓝色的传统算法的第一段，0到16为慢启动阶段，16到20这个阶段以1MSS/RTT增速提升cwnd大小，橙色的线代表快速恢复算法，可以看到在10这个点如果出现了丢包则会进入下面蓝色的快启动阶段，如果出现的是冗余确认，进入的是快速恢复的橙色线条，这个时启始cwnd = (20/2) + 3 = 13，并随后进入拥塞避免阶段。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210828185839.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210828185839.png" srcset="/img/loading.gif"></p>
 <h2 id="BBR算法介绍"><a href="#BBR算法介绍" class="headerlink" title="BBR算法介绍"></a>BBR算法介绍</h2><p>上面的算法通过接收端丢包和冗余ACK包来判断当前网络的拥塞情况，然后调整自己的发送速率，因此有了拥塞控制算法，<code>慢启动</code>、<code>拥塞避免</code>和<code>快速恢复</code>算法（模式）。但是这样的“知进退”的算法，在某些延迟很重要的场景下却降低了传输速率。TCP判断拥塞的两个条件本身也是不够严谨的。</p>
 <ul>
 <li><strong>第一个问题是丢包不一定就代表网络通道满了</strong>，可能整个通道就是漏水的。有时候公网上即时速率跑不满，也会发生丢包的场景，这并不代表发生拥塞了。</li>
 <li><strong>第二个问题是TCP的拥塞算法要等中间设备全部都填满了，才会发生丢包</strong>。这个时候降低速率已经为时已晚了。其实传输的过程中只要跑慢网络传输线路就可以了。</li>
 </ul>
 <p>为了优化这两个问题，后来有了 TCP BBR 拥塞算法。它企图找到一个<strong>平衡点</strong>，通过不断地加快发送速度，将管道填满，但是不要填满中间中间设备的缓存。这个平衡点可以很好的达到高带宽和低延迟的平衡。</p>
-<p><img src="https://gitee.com/realDaiwei/img/raw/master/20210828185909.png" srcset="/img/loading.gif"></p>
+<p><img src="https://raw.githubusercontent.com/realDaiwei/image/master/20210828185909.png" srcset="/img/loading.gif"></p>
 <blockquote>
 <p>我们这里只是入门介绍BBR算法解决的问题，感兴趣的同学可以阅读BBR算法有关论文。</p>
 <p><a target="_blank" rel="noopener" href="https://queue.acm.org/detail.cfm?id=3022184">https://queue.acm.org/detail.cfm?id=3022184</a> 😏</p>
